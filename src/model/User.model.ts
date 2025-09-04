@@ -1,6 +1,7 @@
 import { Schema, Document, model, models } from "mongoose";
 
 export interface Message extends Document {
+  _id: string; // Add this line
   content: string;
   createdAt: Date;
 }

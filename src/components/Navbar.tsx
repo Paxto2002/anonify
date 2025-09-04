@@ -9,6 +9,7 @@ export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const toggleMenu = () => setIsOpen(!isOpen);
 
+
     useEffect(() => {
         const handleScroll = () => {
             setScrolled(window.scrollY > 10);
