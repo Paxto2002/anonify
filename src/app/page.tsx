@@ -1,3 +1,4 @@
+// src/app/page.tsx
 "use client";
 
 import FeaturesSection from "@/components/FeaturesSection";

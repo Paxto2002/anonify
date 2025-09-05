@@ -3,8 +3,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
     Form,
     FormField,
@@ -26,7 +27,10 @@ export const signInSchema = z.object({
 
 export default function SignInForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
     const [showPassword, setShowPassword] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const form = useForm<z.infer<typeof signInSchema>>({
         resolver: zodResolver(signInSchema),
@@ -34,23 +38,55 @@ export default function SignInForm() {
     });
 
     const onSubmit = async (data: z.infer<typeof signInSchema>) => {
-        const result = await signIn("credentials", {
-            redirect: false,
-            identifier: data.identifier,
-            password: data.password,
-        });
+        setIsSubmitting(true);
+        console.log("Starting sign-in process...");
 
-        if (result?.error) {
-            toast.error(
-                result.error === "CredentialsSignin"
-                    ? "Incorrect username or password"
-                    : result.error
-            );
-            return;
-        }
+        try {
+            const result = await signIn("credentials", {
+                redirect: false,
+                identifier: data.identifier,
+                password: data.password,
+                callbackUrl,
+            });
 
-        if (result?.url) {
-            router.replace(result.url);
+            console.log("SignIn result:", result);
+            console.log("Callback URL:", callbackUrl);
+
+            if (result?.error) {
+                console.error("SignIn error:", result.error);
+                toast.error(
+                    result.error === "CredentialsSignin"
+                        ? "Incorrect username or password"
+                        : result.error
+                );
+                return;
+            }
+
+            if (result?.ok) {
+                console.log("Login successful, redirecting to:", callbackUrl);
+                toast.success("Login successful!");
+
+                // Check if session is available before redirecting
+                const checkSession = async () => {
+                    try {
+                        const session = await fetch('/api/auth/session');
+                        const sessionData = await session.json();
+                        console.log("Current session:", sessionData);
+                    } catch (error) {
+                        console.error("Error checking session:", error);
+                    }
+                };
+
+                await checkSession();
+
+                router.push(callbackUrl);
+                router.refresh();
+            }
+        } catch (error) {
+            console.error("SignIn unexpected error:", error);
+            toast.error("An unexpected error occurred");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -58,14 +94,12 @@ export default function SignInForm() {
         <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center p-4 py-15 relative overflow-hidden mx-5 my-20">
             {/* Decorative elements */}
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 via-violet-500 to-purple-600"></div>
-
-            {/* Animated background elements */}
             <div className="absolute -top-20 -left-20 w-64 h-64 bg-purple-600 rounded-full opacity-10 blur-3xl animate-pulse-slow"></div>
             <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-violet-600 rounded-full opacity-10 blur-3xl animate-pulse-slow delay-1000"></div>
 
             <div className="w-full max-w-md z-10">
                 <div className="bg-gray-800/30 backdrop-blur-md rounded-2xl border border-gray-700/50 shadow-2xl overflow-hidden">
-                    {/* Header section with gradient */}
+                    {/* Header */}
                     <div className="bg-gradient-to-r from-purple-600 to-violet-500 p-6 text-center">
                         <h1 className="text-3xl font-bold text-white flex items-center justify-center">
                             <Sparkles className="mr-2" />
@@ -95,6 +129,7 @@ export default function SignInForm() {
                                                 {...field}
                                                 className="bg-gray-800/50 border-gray-700 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                                 placeholder="Enter your email or username"
+                                                disabled={isSubmitting}
                                             />
                                             <FormMessage className="text-red-400" />
                                         </FormItem>
@@ -116,11 +151,13 @@ export default function SignInForm() {
                                                 type={showPassword ? "text" : "password"}
                                                 className="bg-gray-800/50 border-gray-700 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-10"
                                                 placeholder="Enter your password"
+                                                disabled={isSubmitting}
                                             />
                                             <button
                                                 type="button"
                                                 className="absolute right-3 top-9 text-gray-400 hover:text-purple-400 transition-colors"
                                                 onClick={() => setShowPassword(!showPassword)}
+                                                disabled={isSubmitting}
                                             >
                                                 {showPassword ? (
                                                     <EyeOff className="h-5 w-5" />
@@ -136,28 +173,30 @@ export default function SignInForm() {
                                 {/* Submit */}
                                 <Button
                                     type="submit"
-                                    className="w-full bg-gradient-to-r from-purple-600 to-violet-500 hover:from-violet-500 hover:to-purple-600 text-white font-semibold py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                                    disabled={isSubmitting}
+                                    className="w-full bg-gradient-to-r from-purple-600 to-violet-500 hover:from-violet-500 hover:to-purple-600 text-white font-semibold py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-70"
                                 >
-                                    Sign In
+                                    {isSubmitting ? "Signing in..." : "Sign In"}
                                 </Button>
                             </form>
-                        </Form>
 
-                        <div className="text-center mt-6 pt-6 border-t border-gray-700/50">
-                            <p className="text-gray-400">
-                                Not a member yet?{" "}
-                                <Link
-                                    href="/sign-up"
-                                    className="text-purple-400 font-medium hover:text-violet-300 transition-colors"
-                                >
-                                    Sign Up Now
-                                </Link>
-                            </p>
-                        </div>
+                            {/* Footer */}
+                            <div className="text-center mt-6 pt-6 border-t border-gray-700/50">
+                                <p className="text-gray-400">
+                                    Not a member yet?{" "}
+                                    <Link
+                                        href="/sign-up"
+                                        className="text-purple-400 font-medium hover:text-violet-300 transition-colors"
+                                    >
+                                        Sign Up Now
+                                    </Link>
+                                </p>
+                            </div>
+                        </Form>
                     </div>
                 </div>
 
-                {/* Quote section similar to footer */}
+                {/* Quote section */}
                 <div className="mt-8 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50 text-center">
                     <p className="text-sm text-gray-400 italic">
                         "Privacy isn't an option, and it shouldn't be the price we accept for just getting on the internet."

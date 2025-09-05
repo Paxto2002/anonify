@@ -1,14 +1,8 @@
 import DashboardNavbar from "@/components/DashboardNavbar";
 
-interface RootLayoutProps {
-    children: React.ReactNode;
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+    return <div className="flex flex-col min-h-screen">
+        <DashboardNavbar />
+        {children}</div>;
 }
 
-export default async function RootLayout({ children }: RootLayoutProps) {
-    return (
-        <div className="flex flex-col min-h-screen">
-            <DashboardNavbar />
-            {children}
-        </div>
-    );
-}

@@ -1,7 +1,9 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import AuthProvider from "@/context/AuthProvider";
-import LayoutWrapper from "./(app)/LayoutWrapper";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 
 export const metadata: Metadata = {
   title: "Anonify",
@@ -25,9 +27,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="bg-gradient-to-b from-gray-900 to-black text-gray-200 min-h-screen flex flex-col">
-        <AuthProvider>
-          <LayoutWrapper>{children}</LayoutWrapper>
-        </AuthProvider>
+        <SessionProviderWrapper>
+          <Navbar />
+          {children}
+          <Footer />
+        </SessionProviderWrapper>
       </body>
     </html>
   );

@@ -1,3 +1,4 @@
+// src/app/(auth)/verify/[username]/page.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,9 @@ export default function VerifyAccount() {
 
     const form = useForm<z.infer<typeof verifySchema>>({
         resolver: zodResolver(verifySchema),
+        defaultValues: {
+            code: "", // initialize as empty string
+        },
     });
 
     const onSubmit = async (data: z.infer<typeof verifySchema>) => {

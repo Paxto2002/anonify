@@ -14,51 +14,44 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { AcceptMessageSchema } from '@/schemas/acceptMessageSchema';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 function UserDashboard() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSwitchLoading, setIsSwitchLoading] = useState(false);
-
-    const handleDeleteMessage = (messageId: string) => {
-        setMessages(messages.filter((message) => message._id !== messageId));
-    };
-
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
+    const router = useRouter();
 
     const form = useForm({
         resolver: zodResolver(AcceptMessageSchema),
         defaultValues: {
-            acceptMessage: false, // Make sure this matches your schema field name
+            acceptMessage: false,
         },
     });
 
     const { register, watch, setValue } = form;
-    const acceptMessage = watch('acceptMessage'); // Changed to singular to match schema
+    const acceptMessage = watch('acceptMessage');
 
+    // --- define functions first ---
     const fetchAcceptMessages = useCallback(async () => {
         setIsSwitchLoading(true);
         try {
             const response = await axios.get<ApiResponse>('/api/accept-messages');
-
-            // ✅ Always ensure boolean
             setValue('acceptMessage', response.data.isAcceptingMessages ?? false);
         } catch (error) {
             const axiosError = error as AxiosError<ApiResponse>;
             toast.error(
-                axiosError.response?.data.message ??
-                'Failed to fetch message settings'
+                axiosError.response?.data.message ?? 'Failed to fetch message settings'
             );
         } finally {
             setIsSwitchLoading(false);
         }
     }, [setValue]);
 
-
     const fetchMessages = useCallback(
         async (refresh: boolean = false) => {
             setIsLoading(true);
-            setIsSwitchLoading(false);
             try {
                 const response = await axios.get<ApiResponse>('/api/get-messages');
                 setMessages(response.data.messages || []);
@@ -74,43 +67,61 @@ function UserDashboard() {
                 );
             } finally {
                 setIsLoading(false);
-                setIsSwitchLoading(false);
             }
         },
-        [setIsLoading, setMessages]
+        [setMessages]
     );
 
-    // Fetch initial state from the server
+    // --- redirect if no session ---
     useEffect(() => {
-        if (!session || !session.user) return;
+        if (status === 'loading') return;
+        if (!session) {
+            router.push('/sign-in');
+        }
+    }, [session, status, router]);
 
-        fetchMessages();
-        fetchAcceptMessages();
-    }, [session, setValue, fetchAcceptMessages, fetchMessages]);
+    // --- fetch data when session exists ---
+    useEffect(() => {
+        if (session && session.user) {
+            fetchMessages();
+            fetchAcceptMessages();
+        }
+    }, [session, fetchMessages, fetchAcceptMessages]);
 
-    // Handle switch change
+    // delete handler
+    const handleDeleteMessage = (messageId: string) => {
+        setMessages(messages.filter((message) => message._id !== messageId));
+    };
+
+    // toggle switch handler
     const handleSwitchChange = async () => {
         try {
             const response = await axios.post<ApiResponse>('/api/accept-messages', {
-                acceptMessages: !acceptMessage, // API expects plural, form uses singular
+                acceptMessages: !acceptMessage,
             });
-            setValue('acceptMessage', !acceptMessage); // Changed to singular
+            setValue('acceptMessage', !acceptMessage);
             toast.success(response.data.message);
         } catch (error) {
             const axiosError = error as AxiosError<ApiResponse>;
             toast.error(
-                axiosError.response?.data.message ??
-                'Failed to update message settings'
+                axiosError.response?.data.message ?? 'Failed to update message settings'
             );
         }
     };
 
+    if (status === 'loading') {
+        return (
+            <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+            </div>
+        );
+    }
+
     if (!session || !session.user) {
-        return <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black"></div>;
+        return null;
     }
 
     const { username } = session.user;
-
     const baseUrl = `${window.location.protocol}//${window.location.host}`;
     const profileUrl = `${baseUrl}/u/${username}`;
 
@@ -123,31 +134,13 @@ function UserDashboard() {
 
     return (
         <div className="relative min-h-screen bg-gradient-to-b from-gray-900 to-black py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
-            {/* Background elements */}
+            {/* background blur elements */}
             <div className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-purple-900/20 to-transparent"></div>
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl"></div>
             <div className="absolute top-1/4 left-10 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl"></div>
 
-            {/* Floating particles */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                {[...Array(15)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="absolute rounded-full bg-gradient-to-br from-purple-500/20 to-violet-400/20"
-                        style={{
-                            width: Math.random() * 20 + 5 + "px",
-                            height: Math.random() * 20 + 5 + "px",
-                            top: Math.random() * 100 + "%",
-                            left: Math.random() * 100 + "%",
-                            animation: `float${Math.ceil(Math.random() * 3)} ${15 + Math.random() * 15
-                                }s infinite ease-in-out ${Math.random() * 5}s`,
-                        }}
-                    />
-                ))}
-            </div>
-
             <div className="relative z-10 max-w-6xl mx-auto bg-gray-800/50 backdrop-blur-md rounded-2xl border border-gray-700 p-8">
-                {/* Header */}
+                {/* header */}
                 <div className="text-center mb-8">
                     <div className="flex justify-center mb-4">
                         <div className="p-3 bg-gradient-to-r from-purple-600 to-violet-600 rounded-2xl">
@@ -160,8 +153,8 @@ function UserDashboard() {
                     <p className="text-gray-400">Manage your anonymous messages</p>
                 </div>
 
-                {/* Profile URL Section */}
-                <div className="mb-8 p-6 bg-gray-700/30 backdrop-blur-sm rounded-xl border border-gray-600">
+                {/* profile url */}
+                <div className="mb-8 p-6 bg-gray-700/30 rounded-xl border border-gray-600">
                     <div className="flex items-center gap-3 mb-4">
                         <MessageSquare className="w-6 h-6 text-purple-400" />
                         <h2 className="text-lg font-semibold text-white">Your Unique Link</h2>
@@ -171,7 +164,7 @@ function UserDashboard() {
                             type="text"
                             value={profileUrl}
                             disabled
-                            className="flex-1 bg-gray-600/50 border border-gray-500 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="flex-1 bg-gray-600/50 border border-gray-500 text-white rounded-lg px-4 py-2"
                         />
                         <Button
                             onClick={copyToClipboard}
@@ -183,21 +176,21 @@ function UserDashboard() {
                     </div>
                 </div>
 
-                {/* Message Settings */}
-                <div className="mb-8 p-6 bg-gray-700/30 backdrop-blur-sm rounded-xl border border-gray-600">
+                {/* message settings */}
+                <div className="mb-8 p-6 bg-gray-700/30 rounded-xl border border-gray-600">
                     <div className="flex items-center gap-3 mb-4">
                         <Shield className="w-6 h-6 text-blue-400" />
                         <h2 className="text-lg font-semibold text-white">Message Settings</h2>
                     </div>
                     <div className="flex items-center gap-3">
                         <Switch
-                            {...register('acceptMessage')} // Changed to singular
-                            checked={acceptMessage} // Changed to singular
+                            {...register('acceptMessage')}
+                            checked={acceptMessage}
                             onCheckedChange={handleSwitchChange}
                             disabled={isSwitchLoading}
                         />
                         <span className="text-gray-300">
-                            Accept Messages: {acceptMessage ? 'On' : 'Off'} {/* Changed to singular */}
+                            Accept Messages: {acceptMessage ? 'On' : 'Off'}
                         </span>
                         {isSwitchLoading && (
                             <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
@@ -207,15 +200,12 @@ function UserDashboard() {
 
                 <Separator className="bg-gray-600 my-8" />
 
-                {/* Messages Section */}
+                {/* messages */}
                 <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-semibold text-white">Your Messages</h2>
                         <Button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                fetchMessages(true);
-                            }}
+                            onClick={() => fetchMessages(true)}
                             variant="outline"
                             className="bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-600/50"
                             disabled={isLoading}
@@ -250,22 +240,6 @@ function UserDashboard() {
                     </div>
                 </div>
             </div>
-
-            {/* Global Animations */}
-            <style jsx>{`
-                @keyframes float1 {
-                    0%, 100% { transform: translateY(0) rotate(0deg); }
-                    50% { transform: translateY(-20px) rotate(5deg); }
-                }
-                @keyframes float2 {
-                    0%, 100% { transform: translateY(0) rotate(0deg); }
-                    50% { transform: translateY(-15px) rotate(-5deg); }
-                }
-                @keyframes float3 {
-                    0%, 100% { transform: translateY(0) scale(1); }
-                    50% { transform: translateY(-10px) scale(1.05); }
-                }
-            `}</style>
         </div>
     );
 }

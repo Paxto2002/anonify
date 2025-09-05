@@ -1,3 +1,4 @@
+// src/app/(auth)/sign-up/page.tsx
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -214,19 +215,20 @@ export default function SignUpPage() {
                                     )}
                                 </Button>
                             </form>
-                        </Form>
 
-                        <div className="text-center mt-6 pt-6 border-t border-gray-700/50">
-                            <p className="text-gray-400">
-                                Already a member?{" "}
-                                <Link
-                                    href="/sign-in"
-                                    className="text-purple-400 font-medium hover:text-violet-300 transition-colors"
-                                >
-                                    Sign In
-                                </Link>
-                            </p>
-                        </div>
+                            {/* Sign in link */}
+                            <div className="text-center mt-6 pt-6 border-t border-gray-700/50">
+                                <p className="text-gray-400">
+                                    Already a member?{' '}
+                                    <Link
+                                        href="/sign-in"
+                                        className="text-purple-400 font-medium hover:text-violet-300 transition-colors"
+                                    >
+                                        Sign In
+                                    </Link>
+                                </p>
+                            </div>
+                        </Form>
                     </div>
                 </div>
 
