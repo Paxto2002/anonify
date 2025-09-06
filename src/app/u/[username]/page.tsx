@@ -8,7 +8,7 @@ import { Loader2, Sparkles, Send, MessageCircle, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { CardHeader, CardContent, Card } from '@/components/ui/card';
-import { useCompletion } from '@ai-sdk/react'
+import { useCompletion } from "@ai-sdk/react";
 import {
     Form,
     FormControl,
@@ -39,12 +39,7 @@ export default function SendMessage() {
     const username = params.username;
     const [isLoading, setIsLoading] = useState(false);
 
-    const {
-        complete,
-        completion,
-        isLoading: isSuggestLoading,
-        error,
-    } = useCompletion({
+    const { complete, completion, isLoading: isSuggestLoading, error } = useCompletion({
         api: '/api/suggest-messages',
         initialCompletion: initialMessageString,
     });
@@ -68,7 +63,7 @@ export default function SendMessage() {
             });
 
             toast.success(response.data.message);
-            form.reset({ ...form.getValues(), content: '' });
+            form.reset({ content: '' }); // tutorial logic
         } catch (error) {
             const axiosError = error as AxiosError<ApiResponse>;
             toast.error(
@@ -81,9 +76,9 @@ export default function SendMessage() {
 
     const fetchSuggestedMessages = async () => {
         try {
-            complete('');
-        } catch (error) {
-            console.error('Error fetching messages:', error);
+            complete(''); // tutorial logic
+        } catch (err) {
+            console.error('Error fetching messages:', err);
             toast.error('Failed to fetch suggested messages');
         }
     };
@@ -143,7 +138,7 @@ export default function SendMessage() {
                             ) : (
                                 <Button
                                     type="submit"
-                                    disabled={isLoading || !messageContent}
+                                    disabled={!messageContent || isLoading}
                                     className="w-full h-12 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700"
                                 >
                                     <Send className="mr-2 h-4 w-4" />

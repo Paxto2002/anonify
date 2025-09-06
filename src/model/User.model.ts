@@ -1,26 +1,35 @@
-// src/model/User.model.ts
-import { Schema, Document, model, models } from "mongoose";
+import mongoose, { Schema, Document, model, models } from "mongoose";
 
+// ================== Message Interface & Schema ==================
 export interface Message extends Document {
-  _id: string; // isAcceptingMessagesline
+  _id: string;
   content: string;
+  isRead: boolean; // ✅ helps track read/unread
   createdAt: Date;
 }
 
-const messageSchema = new Schema<Message>({
-  content: {
-    type: String,
-    required: true,
+const messageSchema = new Schema<Message>(
+  {
+    content: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    isRead: {
+      type: Boolean,
+      default: false, // ✅ default unread
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+      required: true,
+    },
   },
-  createdAt: {
-    type: Date,
-    required: true,
-    default: Date.now,
-  },
+  { _id: true }
+);
 
-});
-
-interface User extends Document {
+// ================== User Interface & Schema ==================
+export interface User extends Document {
   username: string;
   email: string;
   password: string;
@@ -47,7 +56,10 @@ const userSchema = new Schema<User>(
       trim: true,
       lowercase: true,
       unique: true,
-      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Please use a valid email address"],
+      match: [
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        "Please use a valid email address",
+      ],
     },
     password: {
       type: String,
@@ -75,7 +87,13 @@ const userSchema = new Schema<User>(
   { timestamps: true }
 );
 
-const MessageModel = models.Message || model<Message>("Message", messageSchema);
-const UserModel = models.User || model<User>("User", userSchema);
+// ================== Models ==================
+const MessageModel =
+  (models.Message as mongoose.Model<Message>) ||
+  model<Message>("Message", messageSchema);
+
+const UserModel =
+  (models.User as mongoose.Model<User>) ||
+  model<User>("User", userSchema);
 
 export { MessageModel, UserModel };

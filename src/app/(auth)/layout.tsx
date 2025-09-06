@@ -1,6 +1,6 @@
-// app/(auth)/layout.tsx
+// src/app/(auth)/layout.tsx
 import AuthProvider from "@/context/AuthProvider";
-import LayoutWrapper from "../(app)/LayoutWrapper";
+import LayoutWrapper from "@/components/LayoutWrapper";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (

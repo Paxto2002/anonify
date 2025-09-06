@@ -1,9 +1,8 @@
-// app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
+import NavbarWrapper from "@/components/NavbarWrapper"; // NEW: handles session logic
 
 export const metadata: Metadata = {
   title: "Anonify",
@@ -28,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="bg-gradient-to-b from-gray-900 to-black text-gray-200 min-h-screen flex flex-col">
         <SessionProviderWrapper>
-          <Navbar />
+          <NavbarWrapper />
           {children}
           <Footer />
         </SessionProviderWrapper>

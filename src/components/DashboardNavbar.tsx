@@ -1,141 +1,166 @@
 "use client";
 
+import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
-    Form,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Toaster } from "@/components/ui/sonner";
-import { toast } from "sonner";
-import { ApiResponse } from "@/types/ApiResponse";
-import { zodResolver } from "@hookform/resolvers/zod";
-import axios, { AxiosError } from "axios";
-import { useParams, useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { verifySchema } from "@/schemas/verifySchema";
-import { Sparkles, MailCheck } from "lucide-react";
+    MessageCircle,
+    User,
+    Settings,
+    LogOut,
+    Home,
+    Menu,
+    X,
+} from "lucide-react";
+import { usePathname } from "next/navigation";
+import Image from "next/image";
+import { useState } from "react";
 
-export default function VerifyAccount() {
-    const router = useRouter();
-    const params = useParams<{ username: string }>();
+export default function DashboardNavbar() {
+    const { data: session } = useSession();
+    const pathname = usePathname();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    const form = useForm<z.infer<typeof verifySchema>>({
-        resolver: zodResolver(verifySchema),
-    });
-
-    const onSubmit = async (data: z.infer<typeof verifySchema>) => {
-        try {
-            const response = await axios.post<ApiResponse>(`/api/verify-code`, {
-                username: params.username,
-                code: data.code,
-            });
-
-            toast.success(response.data.message, {
-                description: "Your account has been verified ✅",
-            });
-
-            router.replace("/sign-in");
-        } catch (error) {
-            const axiosError = error as AxiosError<ApiResponse>;
-            toast.error(
-                axiosError.response?.data.message ??
-                "An error occurred. Please try again."
-            );
-        }
-    };
+    const navigation = [
+        {
+            name: "Dashboard",
+            href: "/dashboard",
+            icon: Home,
+            current: pathname === "/dashboard",
+        },
+        {
+            name: "Messages",
+            href: "/dashboard/messages",
+            icon: MessageCircle,
+            current: pathname === "/dashboard/messages",
+        },
+        {
+            name: "Profile",
+            href: "/dashboard/profile",
+            icon: User,
+            current: pathname === "/dashboard/profile",
+        },
+        {
+            name: "Settings",
+            href: "/dashboard/settings",
+            icon: Settings,
+            current: pathname === "/dashboard/settings",
+        },
+    ];
 
     return (
-        <>
-            <div className="relative flex justify-center items-center min-h-screen bg-gradient-to-b from-gray-900 to-black overflow-hidden">
-                {/* Background elements matching other sections */}
-                <div className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-purple-900/20 to-transparent"></div>
-                <div className="absolute bottom-0 right-0 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl"></div>
-                <div className="absolute top-1/4 left-10 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl"></div>
-
-                {/* Floating particles */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    {[...Array(15)].map((_, i) => (
-                        <div
-                            key={i}
-                            className="absolute rounded-full bg-gradient-to-br from-purple-500/20 to-violet-400/20"
-                            style={{
-                                width: Math.random() * 20 + 5 + "px",
-                                height: Math.random() * 20 + 5 + "px",
-                                top: Math.random() * 100 + "%",
-                                left: Math.random() * 100 + "%",
-                                animation: `float${Math.ceil(Math.random() * 3)} ${15 + Math.random() * 15
-                                    }s infinite ease-in-out ${Math.random() * 5}s`,
-                            }}
-                        />
-                    ))}
-                </div>
-
-                <div className="relative z-10 w-full max-w-md p-8 space-y-8 bg-gray-800/50 backdrop-blur-md rounded-2xl border border-gray-700 shadow-xl">
-                    <div className="text-center">
-                        <div className="flex justify-center mb-4">
-                            <div className="p-3 bg-gradient-to-r from-purple-600 to-violet-600 rounded-2xl">
-                                <MailCheck className="w-8 h-8 text-white" />
+        <nav className="bg-gray-800/60 backdrop-blur-md border-b border-gray-700 py-5">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between h-16"> {/* Reduced height from h-20 to h-16 */}
+                    {/* Logo and navigation */}
+                    <div className="flex items-center">
+                        <Link href="/dashboard" className="flex items-center group">
+                            <div className="relative">
+                                <div className="absolute -inset-0.5 bg-gradient-to-r from-[#4e5efe] to-[#8a2be2] rounded blur opacity-30 group-hover:opacity-70 transition duration-300"></div>
+                                <div className="relative flex items-center bg-gray-900 rounded-md px-2 py-1.5"> {/* Reduced padding */}
+                                    <Image
+                                        src="/Annonify_Logo.png"
+                                        alt="Anonify Logo"
+                                        width={50} // Reduced from 90 to 70
+                                        height={22} // Reduced from 28 to 22
+                                        className="transition-transform duration-300 group-hover:scale-105"
+                                        priority
+                                    />
+                                </div>
                             </div>
+                        </Link>
+
+                        {/* Desktop nav links */}
+                        <div className="hidden md:ml-6 md:flex md:space-x-2"> {/* Reduced margin and spacing */}
+                            {navigation.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${item.current
+                                            ? "bg-gray-700/60 text-white"
+                                            : "text-gray-300 hover:bg-gray-700/40 hover:text-white"
+                                            }`}
+                                    >
+                                        <Icon className="h-4 w-4 mr-2" />
+                                        {item.name}
+                                    </Link>
+                                );
+                            })}
                         </div>
-                        <h1 className="text-3xl font-bold text-white mb-2">
-                            Verify Your Account
-                        </h1>
-                        <p className="text-gray-400">
-                            Enter the verification code sent to your email
-                        </p>
                     </div>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <FormField
-                                name="code"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-white">Verification Code</FormLabel>
-                                        <Input
-                                            {...field}
-                                            className="bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                            placeholder="Enter 6-digit code"
-                                        />
-                                        <FormMessage className="text-red-400" />
-                                    </FormItem>
-                                )}
-                            />
-                            <Button
-                                type="submit"
-                                className="w-full h-12 bg-gradient-to-r from-purple-600 to-violet-600 text-white font-semibold hover:from-purple-700 hover:to-violet-700 transition-all duration-300"
-                            >
-                                <Sparkles className="mr-2 h-4 w-4" />
-                                Verify Account
-                            </Button>
-                        </form>
-                    </Form>
+
+                    {/* User section + Mobile menu button */}
+                    <div className="flex items-center space-x-3"> {/* Reduced spacing */}
+                        {session?.user && (
+                            <span className="text-gray-300 text-xs hidden md:block"> {/* Reduced text size */}
+                                Welcome, {session.user.name || session.user.username}
+                            </span>
+                        )}
+                        <div className="hidden md:block">
+                            {session?.user && (
+                                <Button
+                                    onClick={() => signOut()}
+                                    variant="outline"
+                                    className="bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-600/50 hover:text-white py-1 h-8" // Reduced height
+                                    size="sm"
+                                >
+                                    <LogOut className="h-3 w-3 mr-1" /> {/* Reduced icon size */}
+                                    Sign Out
+                                </Button>
+                            )}
+                        </div>
+
+                        {/* Hamburger Menu */}
+                        <button
+                            className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        >
+                            {mobileMenuOpen ? (
+                                <X className="h-5 w-5" />
+                            ) : (
+                                <Menu className="h-5 w-5" />
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Toaster renders globally */}
-            <Toaster richColors closeButton />
-
-            {/* Global Animations */}
-            <style jsx>{`
-                @keyframes float1 {
-                    0%, 100% { transform: translateY(0) rotate(0deg); }
-                    50% { transform: translateY(-20px) rotate(5deg); }
-                }
-                @keyframes float2 {
-                    0%, 100% { transform: translateY(0) rotate(0deg); }
-                    50% { transform: translateY(-15px) rotate(-5deg); }
-                }
-                @keyframes float3 {
-                    0%, 100% { transform: translateY(0) scale(1); }
-                    50% { transform: translateY(-10px) scale(1.05); }
-                }
-            `}</style>
-        </>
+            {/* Mobile nav */}
+            {mobileMenuOpen && (
+                <div className="md:hidden border-t border-gray-700 bg-gray-900">
+                    <div className="px-2 pt-2 pb-3 space-y-1">
+                        {navigation.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                                <Link
+                                    key={item.name}
+                                    href={item.href}
+                                    className={`flex items-center px-3 py-2 rounded-md text-base font-medium transition-all duration-200 ${item.current
+                                        ? "bg-gray-700/60 text-white"
+                                        : "text-gray-300 hover:bg-gray-700/40 hover:text-white"
+                                        }`}
+                                >
+                                    <Icon className="h-4 w-4 mr-3" /> {/* Reduced icon size */}
+                                    {item.name}
+                                </Link>
+                            );
+                        })}
+                        {session?.user && (
+                            <Button
+                                onClick={() => signOut()}
+                                variant="outline"
+                                className="w-full bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-600/50 hover:text-white mt-2 py-1.5" // Reduced padding
+                                size="sm"
+                            >
+                                <LogOut className="h-3 w-3 mr-2" /> {/* Reduced icon size */}
+                                Sign Out
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            )}
+        </nav>
     );
 }

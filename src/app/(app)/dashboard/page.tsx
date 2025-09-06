@@ -2,11 +2,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, RefreshCcw, Copy, Sparkles, User, MessageCircle, Shield } from 'lucide-react';
+import { Loader2, RefreshCcw, Copy, User, MessageCircle, Shield } from 'lucide-react';
 import axios, { AxiosError } from 'axios';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,15 +19,14 @@ import { ApiResponse } from '@/types/ApiResponse';
 import { Message } from '@/model/User.model';
 
 export default function UserDashboard() {
-    const { data: session } = useSession();
+    const router = useRouter();
+    const { data: session, status } = useSession();
 
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSwitchLoading, setIsSwitchLoading] = useState(false);
 
-    const form = useForm<{
-        acceptMessage: boolean;
-    }>({
+    const form = useForm<{ acceptMessage: boolean }>({
         resolver: zodResolver(AcceptMessageSchema),
         defaultValues: { acceptMessage: false },
     });
@@ -52,7 +52,6 @@ export default function UserDashboard() {
         setIsSwitchLoading(true);
         try {
             const response = await axios.get<ApiResponse>('/api/accept-messages');
-            // Fix: ensure boolean
             setValue('acceptMessage', response.data.isAcceptingMessages ?? false);
         } catch (error) {
             const axiosError = error as AxiosError<ApiResponse>;
@@ -78,13 +77,39 @@ export default function UserDashboard() {
         }
     };
 
+    // Fetch messages & settings only when session is ready
     useEffect(() => {
+        if (status !== 'authenticated') return;
         if (!session?.user) return;
+
+        // If user is not verified, redirect to verify page
+        if (!session.user.isVerified) {
+            router.push(`/verify/${session.user.username}`);
+            return;
+        }
+
         fetchMessages();
         fetchAcceptMessage();
-    }, [session, fetchMessages, fetchAcceptMessage]);
+    }, [session, status, fetchMessages, fetchAcceptMessage, router]);
 
-    if (!session?.user) return <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black"></div>;
+    // Loading state while session is being fetched
+    if (status === 'loading') {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-900 to-black">
+                <Loader2 className="w-8 h-8 animate-spin text-white" />
+            </div>
+        );
+    }
+
+    // Not logged in
+    if (!session?.user) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-black text-white">
+                <p>You are not signed in.</p>
+                <Button onClick={() => signIn()}>Sign In</Button>
+            </div>
+        );
+    }
 
     const { username } = session.user;
     const baseUrl = `${window.location.protocol}//${window.location.host}`;
@@ -191,7 +216,9 @@ export default function UserDashboard() {
                                     <MessageCard
                                         key={message._id}
                                         message={message}
-                                        onMessageDelete={(id) => setMessages((prev) => prev.filter((m) => m._id !== id))}
+                                        onMessageDelete={(id) =>
+                                            setMessages((prev) => prev.filter((m) => m._id !== id))
+                                        }
                                     />
                                 ))
                             ) : (
