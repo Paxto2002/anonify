@@ -1,3 +1,4 @@
+// src/components/MessageCard.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -24,10 +25,14 @@ import { ApiResponse } from "@/types/ApiResponse";
 type MessageCardProps = {
     message: Message;
     onMessageDelete: (messageId: string) => void;
-    onGetSuggestions?: () => Promise<string[]>; // ✅ new prop
+    onGetSuggestions?: () => Promise<string[]>; // ✅ optional for AI
 };
 
-export function MessageCard({ message, onMessageDelete, onGetSuggestions }: MessageCardProps) {
+export function MessageCard({
+    message,
+    onMessageDelete,
+    onGetSuggestions,
+}: MessageCardProps) {
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -58,6 +63,11 @@ export function MessageCard({ message, onMessageDelete, onGetSuggestions }: Mess
         try {
             const result = await onGetSuggestions();
             setSuggestions(result);
+            if (result.length > 0) {
+                toast.info("AI Suggestions generated!", {
+                    description: result.join(" | "),
+                });
+            }
         } catch {
             toast.error("Could not fetch AI suggestions");
         } finally {

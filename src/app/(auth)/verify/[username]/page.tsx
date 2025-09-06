@@ -19,7 +19,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { verifySchema } from "@/schemas/verifySchema";
-import { Sparkles, MailCheck } from "lucide-react";
+import { Sparkles, MailCheck, RefreshCw } from "lucide-react";
 import FloatingParticles from "@/components/FloatingParticles";
 
 export default function VerifyAccount() {
@@ -33,6 +33,7 @@ export default function VerifyAccount() {
         },
     });
 
+    // ✅ Handle Verify Account
     const onSubmit = async (data: z.infer<typeof verifySchema>) => {
         try {
             const response = await axios.post<ApiResponse>(`/api/verify-code`, {
@@ -54,10 +55,28 @@ export default function VerifyAccount() {
         }
     };
 
+    // ✅ Handle Resend Email
+    const handleResend = async () => {
+        try {
+            const res = await axios.post<ApiResponse>("/api/resend-code", {
+                username: params.username,
+            });
+            toast.success(res.data.message, {
+                description: "Check your inbox for a new code 🚀",
+            });
+        } catch (error) {
+            const axiosError = error as AxiosError<ApiResponse>;
+            toast.error(
+                axiosError.response?.data.message ??
+                "Failed to resend verification email"
+            );
+        }
+    };
+
     return (
         <>
             <div className="relative flex justify-center items-center min-h-screen bg-gradient-to-b from-gray-900 to-black overflow-hidden">
-                {/* Background elements matching other sections */}
+                {/* Background elements */}
                 <div className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-purple-900/20 to-transparent"></div>
                 <div className="absolute bottom-0 right-0 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl"></div>
                 <div className="absolute top-1/4 left-10 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl"></div>
@@ -79,6 +98,7 @@ export default function VerifyAccount() {
                             Enter the verification code sent to your email
                         </p>
                     </div>
+
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <FormField
@@ -86,7 +106,9 @@ export default function VerifyAccount() {
                                 control={form.control}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-white">Verification Code</FormLabel>
+                                        <FormLabel className="text-white">
+                                            Verification Code
+                                        </FormLabel>
                                         <Input
                                             {...field}
                                             className="bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -96,12 +118,24 @@ export default function VerifyAccount() {
                                     </FormItem>
                                 )}
                             />
+
+                            {/* Verify Button */}
                             <Button
                                 type="submit"
                                 className="w-full h-12 bg-gradient-to-r from-purple-600 to-violet-600 text-white font-semibold hover:from-purple-700 hover:to-violet-700 transition-all duration-300"
                             >
                                 <Sparkles className="mr-2 h-4 w-4" />
                                 Verify Account
+                            </Button>
+
+                            {/* Resend Email Button */}
+                            <Button
+                                type="button"
+                                onClick={handleResend}
+                                className="w-full h-12 bg-gray-700/50 border border-gray-600 text-white hover:bg-gray-600/70 transition-all"
+                            >
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Resend Verification Email
                             </Button>
                         </form>
                     </Form>
@@ -113,19 +147,34 @@ export default function VerifyAccount() {
 
             {/* Global Animations */}
             <style jsx>{`
-                @keyframes float1 {
-                    0%, 100% { transform: translateY(0) rotate(0deg); }
-                    50% { transform: translateY(-20px) rotate(5deg); }
-                }
-                @keyframes float2 {
-                    0%, 100% { transform: translateY(0) rotate(0deg); }
-                    50% { transform: translateY(-15px) rotate(-5deg); }
-                }
-                @keyframes float3 {
-                    0%, 100% { transform: translateY(0) scale(1); }
-                    50% { transform: translateY(-10px) scale(1.05); }
-                }
-            `}</style>
+        @keyframes float1 {
+          0%,
+          100% {
+            transform: translateY(0) rotate(0deg);
+          }
+          50% {
+            transform: translateY(-20px) rotate(5deg);
+          }
+        }
+        @keyframes float2 {
+          0%,
+          100% {
+            transform: translateY(0) rotate(0deg);
+          }
+          50% {
+            transform: translateY(-15px) rotate(-5deg);
+          }
+        }
+        @keyframes float3 {
+          0%,
+          100% {
+            transform: translateY(0) scale(1);
+          }
+          50% {
+            transform: translateY(-10px) scale(1.05);
+          }
+        }
+      `}</style>
         </>
     );
 }

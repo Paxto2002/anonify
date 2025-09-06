@@ -1,3 +1,4 @@
+// emails/verificationEmail.tsx (outside the src directory)
 import * as React from "react";
 import {
     Html,

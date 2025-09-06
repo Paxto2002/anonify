@@ -1,14 +1,22 @@
 import mongoose, { Schema, Document, model, models } from "mongoose";
 
 // ================== Message Interface & Schema ==================
-export interface Message extends Document {
+export interface MessageDocument extends Document {
   _id: string;
   content: string;
-  isRead: boolean; // ✅ helps track read/unread
+  isRead: boolean;
   createdAt: Date;
 }
 
-const messageSchema = new Schema<Message>(
+// Plain type (frontend-friendly, no Mongoose methods)
+export interface Message {
+  _id: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string; // serialized to ISO string
+}
+
+const messageSchema = new Schema<MessageDocument>(
   {
     content: {
       type: String,
@@ -17,7 +25,7 @@ const messageSchema = new Schema<Message>(
     },
     isRead: {
       type: Boolean,
-      default: false, // ✅ default unread
+      default: false,
     },
     createdAt: {
       type: Date,
@@ -29,7 +37,7 @@ const messageSchema = new Schema<Message>(
 );
 
 // ================== User Interface & Schema ==================
-export interface User extends Document {
+export interface UserDocument extends Document {
   username: string;
   email: string;
   password: string;
@@ -37,12 +45,12 @@ export interface User extends Document {
   verifyCodeExpiry: Date;
   isVerified: boolean;
   isAcceptingMessages: boolean;
-  messages: Message[];
+  messages: MessageDocument[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-const userSchema = new Schema<User>(
+const userSchema = new Schema<UserDocument>(
   {
     username: {
       type: String,
@@ -89,11 +97,11 @@ const userSchema = new Schema<User>(
 
 // ================== Models ==================
 const MessageModel =
-  (models.Message as mongoose.Model<Message>) ||
-  model<Message>("Message", messageSchema);
+  (models.Message as mongoose.Model<MessageDocument>) ||
+  model<MessageDocument>("Message", messageSchema);
 
 const UserModel =
-  (models.User as mongoose.Model<User>) ||
-  model<User>("User", userSchema);
+  (models.User as mongoose.Model<UserDocument>) ||
+  model<UserDocument>("User", userSchema);
 
 export { MessageModel, UserModel };

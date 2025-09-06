@@ -1,3 +1,4 @@
+// src/app/(app)/dashboard/messages/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -9,7 +10,7 @@ import axios, { AxiosError } from 'axios';
 import { MessageCard } from '@/components/MessageCard';
 import { Toaster, toast } from 'sonner';
 import { ApiResponse } from '@/types/ApiResponse';
-import { Message } from '@/model/User.model';
+import type { Message } from '@/types/Message';
 
 export default function MessagesPage() {
     const { data: session, status } = useSession();
@@ -23,13 +24,20 @@ export default function MessagesPage() {
         setIsLoading(true);
         try {
             const response = await axios.get<ApiResponse>('/api/get-messages');
-            const allMessages = response.data.messages || [];
+            const allMessages = (response.data.messages || []) as any[];
 
-            let filteredMessages = allMessages;
+            // 🔑 Convert backend `Date` → frontend `string`
+            const normalizedMessages: Message[] = allMessages.map((msg) => ({
+                ...msg,
+                createdAt: new Date(msg.createdAt).toISOString(),
+                updatedAt: new Date(msg.updatedAt).toISOString(),
+            }));
+
+            let filteredMessages = normalizedMessages;
             if (filter === 'recent') {
                 const sevenDaysAgo = new Date();
                 sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                filteredMessages = allMessages.filter(
+                filteredMessages = normalizedMessages.filter(
                     (msg) => new Date(msg.createdAt) >= sevenDaysAgo
                 );
             }

@@ -1,7 +1,6 @@
 // src/app/api/send-message/route.ts
-import {UserModel} from '@/model/User.model';
-import {dbConnect} from '@/lib/dbConnect';
-import { Message } from '@/model/User.model';
+import { UserModel, MessageDocument } from '@/model/User.model';
+import { dbConnect } from '@/lib/dbConnect';
 
 export async function POST(request: Request) {
   await dbConnect();
@@ -21,14 +20,18 @@ export async function POST(request: Request) {
     if (!user.isAcceptingMessages) {
       return Response.json(
         { message: 'User is not accepting messages', success: false },
-        { status: 403 } // 403 Forbidden status
+        { status: 403 }
       );
     }
 
-    const newMessage = { content, createdAt: new Date() };
+    // Use MessageDocument here
+    const newMessage: Partial<MessageDocument> = {
+      content,
+      createdAt: new Date(),
+    };
 
-    // Push the new message to the user's messages array
-    user.messages.push(newMessage as Message);
+    // Push the new message into the array
+    user.messages.push(newMessage as MessageDocument);
     await user.save();
 
     return Response.json(

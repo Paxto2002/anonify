@@ -1,3 +1,4 @@
+// src/helpers/sendVerificationEmail.tsx
 import * as React from "react";
 import { resend } from "@/lib/resend";
 import { VerificationEmail } from "../../emails/verificationEmail";
@@ -16,11 +17,12 @@ export async function sendVerificationEmail(
     );
 
     await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "onboarding@mail.anonify.app", // <- Use your verified domain
       to: email,
       subject: "Annonify | Verification Code",
-      html: emailHtml, // ✅ now it's a string
+      html: emailHtml,
     });
+
 
     return { success: true, message: "Succeeded to send verification email" };
   } catch (emailError) {

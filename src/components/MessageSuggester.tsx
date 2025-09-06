@@ -1,3 +1,4 @@
+// src/components/MessageSuggester.tsx
 "use client";
 
 import { useState } from "react";
