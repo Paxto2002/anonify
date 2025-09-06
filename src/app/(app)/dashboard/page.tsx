@@ -1,3 +1,4 @@
+// src/app/(app)/dashboard/page.tsx
 'use client';
 
 import { MessageCard } from '@/components/MessageCard';

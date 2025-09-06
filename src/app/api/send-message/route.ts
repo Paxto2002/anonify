@@ -1,3 +1,4 @@
+// src/app/api/send-message/route.ts
 import {UserModel} from '@/model/User.model';
 import {dbConnect} from '@/lib/dbConnect';
 import { Message } from '@/model/User.model';

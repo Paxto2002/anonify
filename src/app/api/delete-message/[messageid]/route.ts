@@ -1,49 +1,48 @@
-import { UserModel } from '@/model/User.model';
-import { getServerSession } from 'next-auth/next';
-import { dbConnect } from '@/lib/dbConnect';
-import { User } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/options';
+// src/app/api/delete-message/[messageid]/route.ts
+import { UserModel } from "@/model/User.model";
+import { getServerSession } from "next-auth/next";
+import { dbConnect } from "@/lib/dbConnect";
+import { NextRequest } from "next/server";
+import { authOptions } from "../../auth/[...nextauth]/options";
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { messageid: string } }
 ) {
   const messageId = params.messageid;
+
   await dbConnect();
 
   const session = await getServerSession(authOptions);
 
-  // ✅ Make sure session and user exist before using
   if (!session || !session.user) {
     return Response.json(
-      { success: false, message: 'Not authenticated' },
+      { success: false, message: "Not authenticated" },
       { status: 401 }
     );
   }
 
-  const _user = session.user as User & { _id: string }; //  assert type with _id
-
   try {
     const updateResult = await UserModel.updateOne(
-      { _id: _user._id }, // safe now
+      { _id: session.user._id },
       { $pull: { messages: { _id: messageId } } }
     );
 
     if (updateResult.modifiedCount === 0) {
       return Response.json(
-        { message: 'Message not found or already deleted', success: false },
+        { success: false, message: "Message not found or already deleted" },
         { status: 404 }
       );
     }
 
     return Response.json(
-      { message: 'Message deleted', success: true },
+      { success: true, message: "Message deleted" },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error deleting message:', error);
+    console.error("Error deleting message:", error);
     return Response.json(
-      { message: 'Error deleting message', success: false },
+      { success: false, message: "Error deleting message" },
       { status: 500 }
     );
   }

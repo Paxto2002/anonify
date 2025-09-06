@@ -1,7 +1,8 @@
+// src/model/User.model.ts
 import { Schema, Document, model, models } from "mongoose";
 
 export interface Message extends Document {
-  _id: string; // Add this line
+  _id: string; // isAcceptingMessagesline
   content: string;
   createdAt: Date;
 }
@@ -16,6 +17,7 @@ const messageSchema = new Schema<Message>({
     required: true,
     default: Date.now,
   },
+
 });
 
 interface User extends Document {
@@ -25,7 +27,7 @@ interface User extends Document {
   verifyCode: string;
   verifyCodeExpiry: Date;
   isVerified: boolean;
-  isAcceptingMessage: boolean;
+  isAcceptingMessages: boolean;
   messages: Message[];
   createdAt: Date;
   updatedAt: Date;
@@ -64,7 +66,7 @@ const userSchema = new Schema<User>(
       type: Boolean,
       default: false,
     },
-    isAcceptingMessage: {
+    isAcceptingMessages: {
       type: Boolean,
       default: true,
     },

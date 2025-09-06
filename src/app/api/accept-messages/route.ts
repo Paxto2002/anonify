@@ -1,3 +1,4 @@
+// app/api/accept-messages/route.ts
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/options";
 import { dbConnect } from "@/lib/dbConnect";
@@ -15,8 +16,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const user = session.user;
-  const userId = user._id;
+  const userId = session.user._id;
   const { acceptMessages } = await request.json();
 
   try {
@@ -65,10 +65,8 @@ export async function GET(request: Request) {
     );
   }
 
-  const user = session.user;
-
   try {
-    const foundUser = await UserModel.findById(user._id);
+    const foundUser = await UserModel.findById(session.user._id);
 
     if (!foundUser) {
       return Response.json(
