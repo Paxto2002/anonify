@@ -1,4 +1,3 @@
-// src/app/(auth)/sign-up/page.tsx
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -68,7 +67,7 @@ export default function SignUpPage() {
         try {
             const response = await axios.post<ApiResponse>('/api/sign-up', data);
             toast.success(response.data.message);
-            router.replace(`/verify/${data.username}`);
+            router.replace(`/verify/${data.username}`); // ✅ tutorial-style redirect
         } catch (error) {
             const err = error as AxiosError<ApiResponse>;
             toast.error(err.response?.data.message || 'Sign-up failed. Try again.');
@@ -86,7 +85,7 @@ export default function SignUpPage() {
 
             <div className="w-full max-w-md z-10">
                 <div className="bg-gray-800/30 backdrop-blur-md rounded-2xl border border-gray-700/50 shadow-2xl overflow-hidden">
-                    {/* Header section with gradient */}
+                    {/* Header */}
                     <div className="bg-gradient-to-r from-purple-600 to-violet-500 p-6 text-center">
                         <h1 className="text-3xl font-bold text-white flex items-center justify-center">
                             <Sparkles className="mr-2" />
@@ -121,24 +120,31 @@ export default function SignUpPage() {
                                                 className="bg-gray-800/50 border-gray-700 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent w-full"
                                                 placeholder="Enter your username"
                                                 maxLength={20}
+                                                disabled={isSubmitting}
                                             />
                                             <div className="mt-1 w-full">
                                                 {isCheckingUsername && (
                                                     <div className="flex items-center">
-                                                        <Loader2 className="h-4 w-4 animate-spin text-purple-400 inline-block mr-2" />
-                                                        <span className="text-gray-400 text-sm">Checking availability...</span>
+                                                        <Loader2 className="h-4 w-4 animate-spin text-purple-400 mr-2" />
+                                                        <span className="text-gray-400 text-sm">
+                                                            Checking availability...
+                                                        </span>
                                                     </div>
                                                 )}
                                                 {!isCheckingUsername && usernameMessage && (
                                                     <Badge
-                                                        variant={usernameMessage.toLowerCase().includes('available') ? 'outline' : 'destructive'}
-                                                        className="mt-1 bg-gray-800/80 text-gray-200 border-gray-700 w-full text-left break-words whitespace-normal max-w-full"
+                                                        variant={
+                                                            usernameMessage.toLowerCase().includes('available')
+                                                                ? 'outline'
+                                                                : 'destructive'
+                                                        }
+                                                        className="mt-1 bg-gray-800/80 text-gray-200 border-gray-700 w-full text-left break-words"
                                                     >
                                                         {usernameMessage}
                                                     </Badge>
                                                 )}
                                             </div>
-                                            <FormMessage className="text-red-400 break-words whitespace-normal max-w-full" />
+                                            <FormMessage className="text-red-400 break-words" />
                                         </FormItem>
                                     )}
                                 />
@@ -158,11 +164,12 @@ export default function SignUpPage() {
                                                 type="email"
                                                 className="bg-gray-800/50 border-gray-700 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent w-full"
                                                 placeholder="Enter your email"
+                                                disabled={isSubmitting}
                                             />
-                                            <p className="text-sm text-gray-400 mt-1 break-words max-w-full">
+                                            <p className="text-sm text-gray-400 mt-1">
                                                 We will send you a verification code
                                             </p>
-                                            <FormMessage className="text-red-400 break-words max-w-full" />
+                                            <FormMessage className="text-red-400 break-words" />
                                         </FormItem>
                                     )}
                                 />
@@ -182,11 +189,13 @@ export default function SignUpPage() {
                                                 type={showPassword ? 'text' : 'password'}
                                                 className="bg-gray-800/50 border-gray-700 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-10 w-full"
                                                 placeholder="Enter your password"
+                                                disabled={isSubmitting}
                                             />
                                             <button
                                                 type="button"
                                                 className="absolute right-3 top-9 text-gray-400 hover:text-purple-400 transition-colors"
                                                 onClick={() => setShowPassword(!showPassword)}
+                                                disabled={isSubmitting}
                                             >
                                                 {showPassword ? (
                                                     <EyeOff className="h-5 w-5" />
@@ -194,7 +203,7 @@ export default function SignUpPage() {
                                                     <Eye className="h-5 w-5" />
                                                 )}
                                             </button>
-                                            <FormMessage className="text-red-400 break-words max-w-full" />
+                                            <FormMessage className="text-red-400 break-words" />
                                         </FormItem>
                                     )}
                                 />
@@ -207,7 +216,7 @@ export default function SignUpPage() {
                                 >
                                     {isSubmitting ? (
                                         <>
-                                            <Loader2 className="h-4 w-4 animate-spin mr-2 inline-block" />
+                                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
                                             Please wait
                                         </>
                                     ) : (
@@ -216,7 +225,7 @@ export default function SignUpPage() {
                                 </Button>
                             </form>
 
-                            {/* Sign in link */}
+                            {/* Footer */}
                             <div className="text-center mt-6 pt-6 border-t border-gray-700/50">
                                 <p className="text-gray-400">
                                     Already a member?{' '}
@@ -232,9 +241,9 @@ export default function SignUpPage() {
                     </div>
                 </div>
 
-                {/* Quote section */}
+                {/* Quote */}
                 <div className="mt-8 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50 text-center">
-                    <p className="text-sm text-gray-400 italic break-words max-w-full">
+                    <p className="text-sm text-gray-400 italic">
                         "Privacy isn't an option, and it shouldn't be the price we accept for just getting on the internet."
                     </p>
                 </div>

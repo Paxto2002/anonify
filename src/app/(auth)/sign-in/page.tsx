@@ -39,55 +39,28 @@ export default function SignInForm() {
 
     const onSubmit = async (data: z.infer<typeof signInSchema>) => {
         setIsSubmitting(true);
-        console.log("Starting sign-in process...");
 
-        try {
-            const result = await signIn("credentials", {
-                redirect: false,
-                identifier: data.identifier,
-                password: data.password,
-                callbackUrl,
-            });
+        const result = await signIn("credentials", {
+            redirect: false,
+            identifier: data.identifier,
+            password: data.password,
+            callbackUrl,
+        });
 
-            console.log("SignIn result:", result);
-            console.log("Callback URL:", callbackUrl);
-
-            if (result?.error) {
-                console.error("SignIn error:", result.error);
-                toast.error(
-                    result.error === "CredentialsSignin"
-                        ? "Incorrect username or password"
-                        : result.error
-                );
-                return;
+        if (result?.error) {
+            if (result.error === "CredentialsSignin") {
+                toast.error("Incorrect username or password");
+            } else {
+                toast.error(result.error);
             }
-
-            if (result?.ok) {
-                console.log("Login successful, redirecting to:", callbackUrl);
-                toast.success("Login successful!");
-
-                // Check if session is available before redirecting
-                const checkSession = async () => {
-                    try {
-                        const session = await fetch('/api/auth/session');
-                        const sessionData = await session.json();
-                        console.log("Current session:", sessionData);
-                    } catch (error) {
-                        console.error("Error checking session:", error);
-                    }
-                };
-
-                await checkSession();
-
-                router.push(callbackUrl);
-                router.refresh();
-            }
-        } catch (error) {
-            console.error("SignIn unexpected error:", error);
-            toast.error("An unexpected error occurred");
-        } finally {
-            setIsSubmitting(false);
         }
+
+        if (result?.url) {
+            toast.success("Login successful!");
+            router.replace(result.url); // just like tutorial
+        }
+
+        setIsSubmitting(false);
     };
 
     return (
