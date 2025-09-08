@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
 
 // Apply withAuth for additional authentication handling
 export default withAuth(
-  function middleware(req) {
+  function middleware() {
     // Additional middleware logic if needed
   },
   {

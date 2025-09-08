@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ArrowRight, Sparkles, MessageCircle, Shield, Users } from "lucide-react";
+import { CheckCircle2, ArrowRight, Sparkles, MessageCircle, Shield } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import FloatingParticles from "@/components/FloatingParticles";
@@ -25,7 +25,7 @@ export default function LearnMorePage() {
                     </span>
                 </h1>
                 <p className="text-gray-400 text-xl max-w-3xl mx-auto">
-                    Not sure yet? Let's break it down for you — why Anonify is worth
+                    Not sure yet? Let&apos;s break it down for you — why Anonify is worth
                     trying and upgrading.
                 </p>
             </section>
@@ -125,7 +125,7 @@ export default function LearnMorePage() {
                                     {testimonial.icon}
                                     <p className="text-purple-400 font-semibold">{testimonial.name}</p>
                                 </div>
-                                <p className="text-gray-300 italic">"{testimonial.text}"</p>
+                                <p className="text-gray-300 italic">&quote;{testimonial.text}&quote;</p>
                             </div>
                         </div>
                     ))}
@@ -140,7 +140,7 @@ export default function LearnMorePage() {
                     Ready to Experience Anonify?
                 </h2>
                 <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
-                    Start free today. Upgrade when you're ready for more features.
+                    Start free today. Upgrade when you&apos;re ready for more features.
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-6">
                     <Link

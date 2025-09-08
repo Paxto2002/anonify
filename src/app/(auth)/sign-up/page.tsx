@@ -67,7 +67,7 @@ export default function SignUpPage() {
         try {
             const response = await axios.post<ApiResponse>('/api/sign-up', data);
             toast.success(response.data.message);
-            router.replace(`/verify/${data.username}`); // ✅ tutorial-style redirect
+            router.replace(`/verify/${data.username}`); // tutorial-style redirect
         } catch (error) {
             const err = error as AxiosError<ApiResponse>;
             toast.error(err.response?.data.message || 'Sign-up failed. Try again.');
@@ -244,7 +244,7 @@ export default function SignUpPage() {
                 {/* Quote */}
                 <div className="mt-8 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50 text-center">
                     <p className="text-sm text-gray-400 italic">
-                        "Privacy isn't an option, and it shouldn't be the price we accept for just getting on the internet."
+                        &quot;Privacy isn&apos;t an option, and it shouldn&apos;t be the price we accept for just getting on the internet.&quot;
                     </p>
                 </div>
             </div>

@@ -60,7 +60,7 @@ export default function AboutPage() {
                             <h2 className="text-2xl font-semibold text-white">Our Vision</h2>
                         </div>
                         <p className="text-gray-400">
-                            To become the world's most trusted space for anonymous communication,
+                            To become the world&apos;s most trusted space for anonymous communication,
                             enhanced by AI that helps conversations flow naturally and positively.
                         </p>
                     </div>

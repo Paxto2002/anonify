@@ -150,7 +150,7 @@ export default function Footer() {
 
                     <div className="mt-6 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
                         <p className="text-sm text-gray-400 italic">
-                            "Privacy isn't an option, and it shouldn't be the price we accept for just getting on the internet."
+                            &quote;Privacy isn&apost;t an option, and it shouldn&apos;t be the price we accept for just getting on the internet.&quote;
                         </p>
                     </div>
                 </div>

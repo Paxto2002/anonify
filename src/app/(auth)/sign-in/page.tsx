@@ -1,4 +1,5 @@
-'use client';
+// src/app/(auth)/sign-in/page.tsx
+"use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -20,10 +21,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Eye, EyeOff, Sparkles, MessageCircle } from "lucide-react";
 
-export const signInSchema = z.object({
-    identifier: z.string().min(1, "Email or username is required"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-});
+import { signInSchema } from "@/schemas/signInSchema"; // external schema
 
 export default function SignInForm() {
     const router = useRouter();
@@ -57,7 +55,7 @@ export default function SignInForm() {
 
         if (result?.url) {
             toast.success("Login successful!");
-            router.replace(result.url); // just like tutorial
+            router.replace(result.url);
         }
 
         setIsSubmitting(false);
@@ -172,7 +170,7 @@ export default function SignInForm() {
                 {/* Quote section */}
                 <div className="mt-8 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50 text-center">
                     <p className="text-sm text-gray-400 italic">
-                        "Privacy isn't an option, and it shouldn't be the price we accept for just getting on the internet."
+                        &quot;Privacy isn&apos;t an option, and it shouldn&apos;t be the price we accept for just getting on the internet.&quot;
                     </p>
                 </div>
             </div>

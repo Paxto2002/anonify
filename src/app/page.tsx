@@ -116,7 +116,7 @@ export default function Home() {
                       </CardHeader>
                       <CardContent>
                         <p className="text-gray-300 text-sm leading-relaxed">
-                          "{message.content}"
+                          &rdquo;{message.content}&rdquo;
                         </p>
                       </CardContent>
                     </Card>

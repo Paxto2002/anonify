@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, model, models } from "mongoose";
 
 // ================== Message Interface & Schema ==================
 export interface MessageDocument extends Document {
-  _id: string;
+  _id: mongoose.Types.ObjectId; // fix: no longer unknown
   content: string;
   isRead: boolean;
   createdAt: Date;
@@ -10,10 +10,11 @@ export interface MessageDocument extends Document {
 
 // Plain type (frontend-friendly, no Mongoose methods)
 export interface Message {
-  _id: string;
+  _id: string; // serialized as string for API/frontend
   content: string;
   isRead: boolean;
-  createdAt: string; // serialized to ISO string
+  updatedAt: string;
+  createdAt: string;
 }
 
 const messageSchema = new Schema<MessageDocument>(
@@ -38,6 +39,7 @@ const messageSchema = new Schema<MessageDocument>(
 
 // ================== User Interface & Schema ==================
 export interface UserDocument extends Document {
+  _id: mongoose.Types.ObjectId; // ✅ fix: no longer unknown
   username: string;
   email: string;
   password: string;

@@ -10,7 +10,7 @@ import axios, { AxiosError } from 'axios';
 import { MessageCard } from '@/components/MessageCard';
 import { Toaster, toast } from 'sonner';
 import { ApiResponse } from '@/types/ApiResponse';
-import type { Message } from '@/types/Message';
+import { Message } from "@/model/User.model";
 
 export default function MessagesPage() {
     const { data: session, status } = useSession();
@@ -24,7 +24,7 @@ export default function MessagesPage() {
         setIsLoading(true);
         try {
             const response = await axios.get<ApiResponse>('/api/get-messages');
-            const allMessages = (response.data.messages || []) as any[];
+            const allMessages = (response.data.messages || []) as Message[];
 
             // 🔑 Convert backend `Date` → frontend `string`
             const normalizedMessages: Message[] = allMessages.map((msg) => ({

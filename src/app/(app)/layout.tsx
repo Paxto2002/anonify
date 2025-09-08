@@ -1,5 +1,4 @@
 // app/(app)/layout.tsx
-import DashboardNavbar from '@/components/DashboardNavbar';
 
 export default function DashboardLayout({
     children,

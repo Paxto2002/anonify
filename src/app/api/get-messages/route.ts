@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/options";
 import { NextResponse } from "next/server";
 
-// Define the message type (adjust according to your schema)
+// Define the type for the response messages
 type Message = {
   _id: string;
   content: string;
@@ -35,10 +35,14 @@ export async function GET() {
       );
     }
 
-    // Cast messages to Message[]
-    const messages: Message[] = (user.messages || []) as Message[];
+    // Map Mongoose documents to plain objects with _id as string
+    const messages: Message[] = (user.messages || []).map((msg) => ({
+      _id: msg._id.toString(),
+      content: msg.content,
+      createdAt: msg.createdAt,
+    }));
 
-    // Sort messages by createdAt in descending order
+    // Sort messages by createdAt descending
     const sortedMessages = messages.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );

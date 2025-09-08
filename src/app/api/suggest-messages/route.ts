@@ -1,26 +1,38 @@
 // src/app/api/suggest-messages/route.ts
 import { hf } from "@/lib/huggingface";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import type { TextGenerationStreamOutput } from "@huggingface/inference";
 
 export const runtime = "edge";
+
+// 🔹 Zod schema for request body
+const RequestSchema = z.object({
+  message: z.string().min(1, "Message is required"),
+});
 
 /**
  * Converts a Hugging Face async generator to a ReadableStream
  */
 async function convertGeneratorToReadableStream(
-  generator: AsyncGenerator<any>
+  generator: AsyncGenerator<TextGenerationStreamOutput>
 ) {
   return new ReadableStream({
     async start(controller) {
       try {
         for await (const chunk of generator) {
-          const text = chunk.generated_text || "";
+          // chunk.generated_text is string | null
+          const text = chunk.generated_text ?? "";
           const encoder = new TextEncoder();
           controller.enqueue(encoder.encode(text));
         }
         controller.close();
-      } catch (err: any) {
-        console.error("HF streaming error:", err);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          console.error("HF streaming error:", err.message);
+        } else {
+          console.error("HF streaming unknown error:", err);
+        }
         controller.error(err);
       }
     },
@@ -29,14 +41,16 @@ async function convertGeneratorToReadableStream(
 
 export async function POST(req: Request) {
   try {
-    const { message } = await req.json();
+    const body = await req.json();
+    const parsed = RequestSchema.safeParse(body);
 
-    if (!message || message.trim() === "") {
-      return NextResponse.json(
-        { error: "Message is required" },
-        { status: 400 }
-      );
+    if (!parsed.success) {
+      // ✅ SafeParseError has .error.issues not .errors
+      const firstError = parsed.error.issues[0]?.message ?? "Invalid input";
+      return NextResponse.json({ error: firstError }, { status: 400 });
     }
+
+    const { message } = parsed.data;
 
     const prompt = `
 You are a friendly and creative AI assistant for an anonymous social messaging platform like Anonify.
@@ -55,7 +69,7 @@ Example output:
 "That's interesting, can you tell me more?||I really like your point, what else do you think?||Thanks for sharing, I enjoyed reading this!"
 `;
 
-    // Switch to Zephyr-7B-β
+    // 🔹 Switch to Zephyr-7B-β
     const generator = hf.textGenerationStream({
       model: "HuggingFaceH4/zephyr-7b-beta",
       inputs: prompt,
@@ -67,11 +81,27 @@ Example output:
     return new Response(stream, {
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
-  } catch (err: any) {
-    const name = err.name || "HFError";
-    const status = err.status || 500;
-    const headers = err.headers || {};
-    const message = err.message || "Failed to fetch suggestions";
+  } catch (err: unknown) {
+    let name = "HFError";
+    let status = 500;
+    let headers: Record<string, string> = {};
+    let message = "Failed to fetch suggestions";
+
+    if (err instanceof Error) {
+      name = err.name || name;
+      message = err.message || message;
+    } else if (typeof err === "object" && err !== null) {
+      const e = err as {
+        name?: string;
+        status?: number;
+        headers?: Record<string, string>;
+        message?: string;
+      };
+      if (e.name) name = e.name;
+      if (e.status) status = e.status;
+      if (e.headers) headers = e.headers;
+      if (e.message) message = e.message;
+    }
 
     console.error("HF API call failed:", err);
 

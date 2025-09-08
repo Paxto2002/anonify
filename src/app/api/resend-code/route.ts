@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     await user.save();
 
     // Pass all 3 arguments
-    await sendVerificationEmail(user.email, user.username, code);
+await sendVerificationEmail(user.email, user.username, code);
 
     return Response.json(
       { success: true, message: "Verification code resent successfully" },

@@ -1,10 +1,10 @@
+// src/app/api/delete-account/route.ts
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/options";
 import { dbConnect } from "@/lib/dbConnect";
 import { UserModel } from "@/model/User.model";
-import { NextRequest } from "next/server";
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   await dbConnect();
 
   const session = await getServerSession(authOptions);
@@ -16,8 +16,8 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const userId = session.user._id; // correct
-const result = await UserModel.findByIdAndDelete(userId);
+    const userId = session.user._id; // ✅ safe
+    const result = await UserModel.findByIdAndDelete(userId);
 
     if (!result) {
       return Response.json(

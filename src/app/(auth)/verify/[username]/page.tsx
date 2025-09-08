@@ -33,7 +33,7 @@ export default function VerifyAccount() {
         },
     });
 
-    // ✅ Handle Verify Account
+    // Handle Verify Account
     const onSubmit = async (data: z.infer<typeof verifySchema>) => {
         try {
             const response = await axios.post<ApiResponse>(`/api/verify-code`, {
@@ -55,7 +55,7 @@ export default function VerifyAccount() {
         }
     };
 
-    // ✅ Handle Resend Email
+    // Handle Resend Email
     const handleResend = async () => {
         try {
             const res = await axios.post<ApiResponse>("/api/resend-code", {
@@ -147,34 +147,34 @@ export default function VerifyAccount() {
 
             {/* Global Animations */}
             <style jsx>{`
-        @keyframes float1 {
-          0%,
-          100% {
-            transform: translateY(0) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-20px) rotate(5deg);
-          }
-        }
-        @keyframes float2 {
-          0%,
-          100% {
-            transform: translateY(0) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-15px) rotate(-5deg);
-          }
-        }
-        @keyframes float3 {
-          0%,
-          100% {
-            transform: translateY(0) scale(1);
-          }
-          50% {
-            transform: translateY(-10px) scale(1.05);
-          }
-        }
-      `}</style>
+            @keyframes float1 {
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+            }
+            @keyframes float2 {
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-15px) rotate(-5deg);
+            }
+            }
+            @keyframes float3 {
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-10px) scale(1.05);
+            }
+            }
+        `}</style>
         </>
     );
 }

@@ -1,74 +1,109 @@
 // src/app/api/auth/[...nextauth]/options.ts
-import { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import bcrypt from 'bcryptjs';
-import {dbConnect} from '@/lib/dbConnect';
-import {UserModel} from '@/model/User.model';
+import { NextAuthOptions, User } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
+import { UserModel } from "@/model/User.model";
+import { dbConnect } from "@/lib/dbConnect";
+import { JWT } from "next-auth/jwt";
+import { Session } from "next-auth";
+
+// Extend JWT to include our custom fields
+interface ExtendedJWT extends JWT {
+  _id: string;
+  username: string;
+  email: string;
+  isVerified: boolean;
+  isAcceptingMessages: boolean;
+}
+
+// Extend Session["user"] to include our custom fields
+interface ExtendedSessionUser extends User {
+  _id: string;
+  username: string;
+  email: string;
+  isVerified: boolean;
+  isAcceptingMessages: boolean;
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      id: 'credentials',
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
-        email: { label: 'Email', type: 'text' },
-        password: { label: 'Password', type: 'password' },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
-      async authorize(credentials: any): Promise<any> {
-        await dbConnect();
-        try {
-          const user = await UserModel.findOne({
-            $or: [
-              { email: credentials.identifier },
-              { username: credentials.identifier },
-            ],
-          });
-          if (!user) {
-            throw new Error('No user found with this email');
-          }
-          if (!user.isVerified) {
-            throw new Error('Please verify your account before logging in');
-          }
-          const isPasswordCorrect = await bcrypt.compare(
-            credentials.password,
-            user.password
-          );
-          if (isPasswordCorrect) {
-            return user;
-          } else {
-            throw new Error('Incorrect password');
-          }
-        } catch (err: any) {
-          throw new Error(err);
+      async authorize(credentials): Promise<User | null> {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Email and password are required");
         }
+
+        await dbConnect();
+        const user = await UserModel.findOne({ email: credentials.email }).exec();
+
+        if (!user) {
+          throw new Error("No user found with this email");
+        }
+
+        const isPasswordCorrect = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
+
+        if (!isPasswordCorrect) {
+          throw new Error("Invalid credentials");
+        }
+
+        if (!user.isVerified) {
+          throw new Error("Please verify your account before logging in");
+        }
+
+        // ✅ Must return object with `id` to satisfy `User`
+        return {
+          id: user._id.toString(),
+          _id: user._id.toString(),
+          username: user.username,
+          email: user.email,
+          isVerified: user.isVerified,
+          isAcceptingMessages: user.isAcceptingMessages,
+        } as ExtendedSessionUser;
       },
     }),
   ],
+
+  session: {
+    strategy: "jwt",
+  },
+
+  pages: {
+    signIn: "/sign-in",
+  },
+
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }): Promise<ExtendedJWT> {
       if (user) {
-        token._id = user._id?.toString(); // Convert ObjectId to string
-        token.isVerified = user.isVerified;
-        token.isAcceptingMessages = user.isAcceptingMessages;
-        token.username = user.username;
+        const u = user as ExtendedSessionUser;
+        token._id = u._id;
+        token.username = u.username;
+        token.email = u.email ?? "";
+        token.isVerified = u.isVerified;
+        token.isAcceptingMessages = u.isAcceptingMessages;
       }
-      return token;
+      return token as ExtendedJWT;
     },
-    async session({ session, token }) {
-      if (token) {
-        session.user._id = token._id;
-        session.user.isVerified = token.isVerified;
-        session.user.isAcceptingMessages = token.isAcceptingMessages;
-        session.user.username = token.username;
+
+    async session({ session, token }): Promise<Session> {
+      if (session.user) {
+        const t = token as ExtendedJWT;
+        const sUser = session.user as ExtendedSessionUser;
+
+        sUser._id = t._id;
+        sUser.username = t.username;
+        sUser.email = t.email ?? "";
+        sUser.isVerified = t.isVerified;
+        sUser.isAcceptingMessages = t.isAcceptingMessages;
       }
       return session;
     },
-  },
-  session: {
-    strategy: 'jwt',
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-  pages: {
-    signIn: '/sign-in',
   },
 };

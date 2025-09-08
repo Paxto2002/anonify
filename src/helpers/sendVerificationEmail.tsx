@@ -1,32 +1,34 @@
-// src/helpers/sendVerificationEmail.tsx
-import * as React from "react";
-import { resend } from "@/lib/resend";
-import { VerificationEmail } from "../../emails/verificationEmail";
+import nodemailer from "nodemailer";
 import { render } from "@react-email/render";
-import { ApiResponse } from "@/types/ApiResponse";
+import VerificationEmail from "../../emails/verificationEmail";
 
 export async function sendVerificationEmail(
-  email: string,
+  to: string,
   username: string,
-  verifyCode: string
-): Promise<ApiResponse> {
+  code: string
+): Promise<{ success: boolean; message: string }> {
   try {
-    // Convert React component → HTML string
-    const emailHtml = await render(
-      <VerificationEmail username={username} verifyCode={verifyCode} />
-    );
-
-    await resend.emails.send({
-      from: "onboarding@mail.anonify.app", // <- Use your verified domain
-      to: email,
-      subject: "Annonify | Verification Code",
-      html: emailHtml,
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
     });
 
+    // Await render() to get a string instead of Promise<string>
+    const html = await render(<VerificationEmail username={username} verifyCode={code} />);
 
-    return { success: true, message: "Succeeded to send verification email" };
-  } catch (emailError) {
-    console.error("Error sending verification email", emailError);
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to,
+      subject: "Anonify - Verify your email",
+      html,
+    });
+
+    return { success: true, message: "Email sent successfully" };
+  } catch (error) {
+    console.error("Error sending verification email:", error);
     return { success: false, message: "Failed to send verification email" };
   }
 }
