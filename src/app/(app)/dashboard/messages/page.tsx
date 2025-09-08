@@ -1,48 +1,53 @@
-// src/app/(app)/dashboard/messages/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, RefreshCcw, MessageCircle, Calendar, ToggleLeft, ToggleRight } from 'lucide-react';
+import {
+    Loader2,
+    RefreshCcw,
+    MessageCircle,
+    Calendar,
+    ToggleLeft,
+    ToggleRight,
+} from 'lucide-react';
 import axios, { AxiosError } from 'axios';
 import { MessageCard } from '@/components/MessageCard';
 import { Toaster, toast } from 'sonner';
 import { ApiResponse } from '@/types/ApiResponse';
-import { Message } from "@/model/User.model";
+import { Message } from '@/model/User.model';
 
 export default function MessagesPage() {
     const { data: session, status } = useSession();
+
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [filter, setFilter] = useState<'all' | 'recent'>('all');
-    const [accepting, setAccepting] = useState(true); // message acceptance state
+    const [accepting, setAccepting] = useState<boolean | null>(null);
 
-    // 📩 Fetch messages
+    /** Fetch all messages for this user */
     const fetchMessages = useCallback(async (refresh = false) => {
         setIsLoading(true);
         try {
-            const response = await axios.get<ApiResponse>('/api/get-messages');
-            const allMessages = (response.data.messages || []) as Message[];
+            const response = await axios.get<ApiResponse & { messages: Message[] }>('/api/get-messages');
+            let allMessages = response.data.messages || [];
 
-            // 🔑 Convert backend `Date` → frontend `string`
-            const normalizedMessages: Message[] = allMessages.map((msg) => ({
+            // Normalize date strings
+            allMessages = allMessages.map(msg => ({
                 ...msg,
                 createdAt: new Date(msg.createdAt).toISOString(),
                 updatedAt: new Date(msg.updatedAt).toISOString(),
             }));
 
-            let filteredMessages = normalizedMessages;
+            // Apply filter if needed
             if (filter === 'recent') {
                 const sevenDaysAgo = new Date();
                 sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                filteredMessages = normalizedMessages.filter(
-                    (msg) => new Date(msg.createdAt) >= sevenDaysAgo
-                );
+                allMessages = allMessages.filter(msg => new Date(msg.createdAt) >= sevenDaysAgo);
             }
 
-            setMessages(filteredMessages);
+            setMessages(allMessages);
             if (refresh) toast.success('Messages refreshed successfully');
         } catch (error) {
             const axiosError = error as AxiosError<ApiResponse>;
@@ -52,11 +57,21 @@ export default function MessagesPage() {
         }
     }, [filter]);
 
-    // 🗑️ Delete message
+    /** Fetch whether user is accepting new messages */
+    const fetchAcceptingStatus = useCallback(async () => {
+        try {
+            const res = await axios.get<{ accepting: boolean }>('/api/get-accepting-status');
+            setAccepting(res.data.accepting);
+        } catch {
+            setAccepting(true); // fallback to true
+        }
+    }, []);
+
+    /** Delete a message */
     const handleDeleteMessage = async (messageId: string) => {
         try {
             await axios.delete(`/api/delete-message/${messageId}`);
-            setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
+            setMessages(prev => prev.filter(msg => msg._id !== messageId));
             toast.success('Message deleted successfully');
         } catch (error) {
             const axiosError = error as AxiosError<ApiResponse>;
@@ -64,41 +79,37 @@ export default function MessagesPage() {
         }
     };
 
-    // ✨ Get AI suggestions
+    /** Get AI suggestions for a message */
     const handleGetSuggestions = async (messageId: string) => {
         try {
-            const res = await axios.post<ApiResponse>('/api/suggest-messages', { messageId });
-            const suggestions = res.data.suggestions || [];
-            return suggestions;
+            const res = await axios.post<ApiResponse & { suggestions: string[] }>('/api/suggest-messages', { messageId });
+            return res.data.suggestions || [];
         } catch {
             toast.error('Failed to get suggestions');
             return [];
         }
     };
 
-    // 🔘 Toggle accepting messages
+    /** Toggle accepting new messages */
     const handleToggleAccepting = async () => {
         try {
-            const res = await axios.post<ApiResponse>('/api/accept-messages', {
+            const res = await axios.post<{ accepting: boolean }>('/api/accept-messages', {
                 accepting: !accepting,
             });
-            if (typeof res.data.accepting === "boolean") {
-                setAccepting(res.data.accepting);
-            }
-            toast.success(
-                `Now ${res.data.accepting ? 'accepting' : 'not accepting'} new messages`
-            );
+            setAccepting(res.data.accepting);
+            toast.success(`Now ${res.data.accepting ? 'accepting' : 'not accepting'} new messages`);
         } catch {
             toast.error('Failed to update settings');
         }
     };
 
-
+    /** Initial load */
     useEffect(() => {
         if (status === 'authenticated' && session?.user) {
             fetchMessages();
+            fetchAcceptingStatus();
         }
-    }, [status, session, fetchMessages]);
+    }, [status, session, fetchMessages, fetchAcceptingStatus]);
 
     if (status === 'loading') {
         return (
@@ -119,7 +130,7 @@ export default function MessagesPage() {
     }
 
     const totalMessages = messages.length;
-    const unreadMessages = messages.filter((msg) => !msg.isRead).length;
+    const unreadMessages = messages.filter(msg => !msg.isRead).length;
 
     return (
         <>
@@ -132,9 +143,7 @@ export default function MessagesPage() {
                                 <MessageCircle className="w-8 h-8 text-white" />
                             </div>
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                            Your Messages
-                        </h1>
+                        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Your Messages</h1>
                         <p className="text-gray-400">Manage and view all your anonymous messages</p>
                     </div>
 
@@ -151,10 +160,7 @@ export default function MessagesPage() {
                             </div>
                             <div className="text-center p-4 bg-gray-700/30 rounded-xl">
                                 <div className="text-2xl font-bold text-green-400">
-                                    {totalMessages > 0
-                                        ? Math.round(((totalMessages - unreadMessages) / totalMessages) * 100)
-                                        : 0}
-                                    %
+                                    {totalMessages > 0 ? Math.round(((totalMessages - unreadMessages) / totalMessages) * 100) : 0}%
                                 </div>
                                 <div className="text-gray-400 text-sm">Read Rate</div>
                             </div>
@@ -184,29 +190,27 @@ export default function MessagesPage() {
                                     disabled={isLoading}
                                     className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700"
                                 >
-                                    {isLoading ? (
-                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                    ) : (
-                                        <RefreshCcw className="h-4 w-4 mr-2" />
-                                    )}
+                                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCcw className="h-4 w-4 mr-2" />}
                                     Refresh
                                 </Button>
-                                <Button
-                                    onClick={handleToggleAccepting}
-                                    className="bg-gray-700/50 border-gray-600 text-white hover:bg-gray-600/50"
-                                >
-                                    {accepting ? (
-                                        <>
-                                            <ToggleRight className="h-4 w-4 mr-2 text-green-400" />
-                                            Accepting
-                                        </>
-                                    ) : (
-                                        <>
-                                            <ToggleLeft className="h-4 w-4 mr-2 text-red-400" />
-                                            Not Accepting
-                                        </>
-                                    )}
-                                </Button>
+                                {accepting !== null && (
+                                    <Button
+                                        onClick={handleToggleAccepting}
+                                        className="bg-gray-700/50 border-gray-600 text-white hover:bg-gray-600/50"
+                                    >
+                                        {accepting ? (
+                                            <>
+                                                <ToggleRight className="h-4 w-4 mr-2 text-green-400" />
+                                                Accepting
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ToggleLeft className="h-4 w-4 mr-2 text-red-400" />
+                                                Not Accepting
+                                            </>
+                                        )}
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -225,7 +229,7 @@ export default function MessagesPage() {
                             </div>
                         ) : messages.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {messages.map((message) => (
+                                {messages.map(message => (
                                     <MessageCard
                                         key={message._id}
                                         message={message}
@@ -238,9 +242,7 @@ export default function MessagesPage() {
                             <div className="text-center py-12">
                                 <MessageCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
                                 <p className="text-gray-400 text-lg mb-2">
-                                    {filter === 'recent'
-                                        ? 'No messages in the last 7 days'
-                                        : 'No messages yet'}
+                                    {filter === 'recent' ? 'No messages in the last 7 days' : 'No messages yet'}
                                 </p>
                                 <p className="text-gray-500 text-sm">
                                     Share your profile link to start receiving anonymous messages!
