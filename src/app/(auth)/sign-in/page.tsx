@@ -1,4 +1,3 @@
-// src/app/(auth)/sign-in/page.tsx
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,7 +20,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { Eye, EyeOff, Sparkles, MessageCircle } from "lucide-react";
 
-import { signInSchema } from "@/schemas/signInSchema"; // external schema
+// Sign-in validation schema
+export const signInSchema = z.object({
+    identifier: z.string().min(1, "Email or username is required"),
+    password: z.string().min(1, "Password is required"),
+});
 
 export default function SignInForm() {
     const router = useRouter();
@@ -63,7 +66,7 @@ export default function SignInForm() {
 
     return (
         <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center p-4 py-15 relative overflow-hidden mx-5 my-20">
-            {/* Decorative elements */}
+            {/* Background decorative elements */}
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 via-violet-500 to-purple-600"></div>
             <div className="absolute -top-20 -left-20 w-64 h-64 bg-purple-600 rounded-full opacity-10 blur-3xl animate-pulse-slow"></div>
             <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-violet-600 rounded-full opacity-10 blur-3xl animate-pulse-slow delay-1000"></div>
@@ -85,7 +88,10 @@ export default function SignInForm() {
                         <Toaster position="top-right" richColors theme="dark" />
 
                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            <form
+                                onSubmit={form.handleSubmit(onSubmit)}
+                                className="space-y-6"
+                            >
                                 {/* Identifier */}
                                 <FormField
                                     name="identifier"
@@ -141,7 +147,7 @@ export default function SignInForm() {
                                     )}
                                 />
 
-                                {/* Submit */}
+                                {/* Submit Button */}
                                 <Button
                                     type="submit"
                                     disabled={isSubmitting}

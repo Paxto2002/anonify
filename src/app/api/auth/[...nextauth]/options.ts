@@ -1,4 +1,3 @@
-// src/app/api/auth/[...nextauth]/options.ts
 import { NextAuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
@@ -7,7 +6,7 @@ import { dbConnect } from "@/lib/dbConnect";
 import { JWT } from "next-auth/jwt";
 import { Session } from "next-auth";
 
-// Extend JWT to include our custom fields
+// Extend JWT to include custom fields
 interface ExtendedJWT extends JWT {
   _id: string;
   username: string;
@@ -16,7 +15,7 @@ interface ExtendedJWT extends JWT {
   isAcceptingMessages: boolean;
 }
 
-// Extend Session["user"] to include our custom fields
+// Extend Session["user"] to include custom fields
 interface ExtendedSessionUser extends User {
   _id: string;
   username: string;
@@ -30,19 +29,26 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        identifier: { label: "Email or Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials): Promise<User | null> {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password are required");
+        if (!credentials?.identifier || !credentials?.password) {
+          throw new Error("Email/Username and password are required");
         }
 
         await dbConnect();
-        const user = await UserModel.findOne({ email: credentials.email }).exec();
+
+        // Find user by email or username
+        const user = await UserModel.findOne({
+          $or: [
+            { email: credentials.identifier },
+            { username: credentials.identifier },
+          ],
+        }).exec();
 
         if (!user) {
-          throw new Error("No user found with this email");
+          throw new Error("No user found with this identifier");
         }
 
         const isPasswordCorrect = await bcrypt.compare(
@@ -58,7 +64,6 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Please verify your account before logging in");
         }
 
-        // ✅ Must return object with `id` to satisfy `User`
         return {
           id: user._id.toString(),
           _id: user._id.toString(),
@@ -96,7 +101,6 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         const t = token as ExtendedJWT;
         const sUser = session.user as ExtendedSessionUser;
-
         sUser._id = t._id;
         sUser.username = t.username;
         sUser.email = t.email ?? "";
