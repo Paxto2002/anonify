@@ -28,12 +28,7 @@ export default function DashboardNavbar() {
             icon: Home,
             current: pathname === "/dashboard",
         },
-        {
-            name: "Messages",
-            href: "/dashboard/messages",
-            icon: MessageCircle,
-            current: pathname === "/dashboard/messages",
-        },
+
         {
             name: "Profile",
             href: "/dashboard/profile",
