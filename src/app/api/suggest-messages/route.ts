@@ -1,7 +1,7 @@
 // src/app/api/suggest-messages/route.ts
-import { hf } from "@/lib/huggingface";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { generateWithGemini } from "@/lib/gemini"; // Import the Gemini function
 
 export const runtime = "edge";
 
@@ -44,34 +44,24 @@ IMPORTANT:
 - Random variation: ${randomSeed}
 `;
 
-    const response = await hf.textGeneration({
-      model: "google/gemma-2-2b-it",
-      inputs: prompt,
-      parameters: { 
-        max_new_tokens: 150,
-        temperature: 0.9, // Higher for more randomness
-        top_p: 0.95, // Broader token selection
-        top_k: 50, // Consider more options
-        repetition_penalty: 1.2, // Actively discourage repetition
-        do_sample: true, // Ensure sampling is enabled
-        return_full_text: false,
-      },
-    });
-
-    // Extract and clean the suggestions
-    const generatedText = response.generated_text.trim();
+    // Use the Gemini function directly (no .generateContent needed)
+    const generatedText = await generateWithGemini(prompt);
     
-    // More robust parsing with multiple fallback strategies
+    if (!generatedText) {
+      throw new Error("No text generated from Gemini API");
+    }
+
+    // Extract and clean the suggestions with proper typing
     let suggestions = generatedText
       .split('||')
-      .map(s => s.trim()
-        .replace(/^["']|["']$/g, '') // Remove quotes
-        .replace(/^\d+[\.\)]\s*/, '') // Remove numbering like "1. ", "2) "
-        .replace(/^-\s*/, '') // Remove bullet points
-        .replace(/suggestion\s*\d+\s*:/i, '') // Remove "suggestion 1:" labels
+      .map((s: string) => s.trim()
+        .replace(/^["']|["']$/g, '')
+        .replace(/^\d+[\.\)]\s*/, '')
+        .replace(/^-\s*/, '')
+        .replace(/suggestion\s*\d+\s*:/i, '')
         .trim()
       )
-      .filter(s => s.length > 5 && 
+      .filter((s: string) => s.length > 5 && 
                   !s.toLowerCase().includes('format') &&
                   !s.toLowerCase().includes('suggestion') &&
                   !s.toLowerCase().includes('response') &&
@@ -107,15 +97,13 @@ IMPORTANT:
       headers: { 
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'CDN-Cache-Control': 'no-cache',
-        'Vary': 'Content-Type, Authorization', // Prevent edge caching
       },
     });
 
   } catch (err: unknown) {
     console.error("API call failed:", err);
     
-    // Get the original message from the request to create contextual fallbacks
+    // Get the original message from the request
     let originalMessage = "this";
     try {
       const body = await req.json();

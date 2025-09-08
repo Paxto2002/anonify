@@ -1,3 +1,4 @@
+// src/app/u/[username]/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -7,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios, { AxiosError } from 'axios';
 import { Button } from '@/components/ui/button';
-import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Toaster, toast } from 'sonner';
 import FloatingParticles from '@/components/FloatingParticles';
 import MessageSuggester from '@/components/MessageSuggester';
@@ -18,6 +19,11 @@ import Image from 'next/image';
 const AnonymousMessageSchema = z.object({
     content: z.string().min(1, 'Message cannot be empty'),
 });
+
+// Define the response type for the send-message API
+interface SendMessageResponse {
+    message: string;
+}
 
 export default function PublicMessagePage() {
     const params = useParams<{ username: string }>();
@@ -32,11 +38,11 @@ export default function PublicMessagePage() {
     const onSubmit = async (data: z.infer<typeof AnonymousMessageSchema>) => {
         setIsSubmitting(true);
         try {
-            const response = await axios.post('/api/send-message', {
+            const response = await axios.post<SendMessageResponse>('/api/send-message', {
                 username: params.username,
                 content: data.content,
             });
-            toast.success((response.data as any)?.message || 'Message sent successfully!');
+            toast.success(response.data.message || 'Message sent successfully!');
             form.reset();
         } catch (error) {
             const err = error as AxiosError<{ message?: string }>;
@@ -105,12 +111,14 @@ export default function PublicMessagePage() {
                                             <FormLabel className="text-white text-lg font-semibold">
                                                 Your Message
                                             </FormLabel>
-                                            <textarea
-                                                {...field}
-                                                placeholder="Type your heartfelt message here..."
-                                                className="bg-gray-800/50 backdrop-blur-md border-2 border-gray-600 text-white text-lg p-6 rounded-2xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 h-24 resize-none w-full"
-                                                disabled={isSubmitting}
-                                            />
+                                            <FormControl>
+                                                <textarea
+                                                    {...field}
+                                                    placeholder="Type your heartfelt message here..."
+                                                    className="bg-gray-800/50 backdrop-blur-md border-2 border-gray-600 text-white text-lg p-6 rounded-2xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 h-24 resize-none w-full"
+                                                    disabled={isSubmitting}
+                                                />
+                                            </FormControl>
                                             <FormMessage className="text-red-400 text-sm" />
                                         </FormItem>
                                     )}
