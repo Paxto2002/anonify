@@ -1,26 +1,37 @@
 'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
 import { Loader2, RefreshCcw, Copy, User, MessageCircle, Shield } from 'lucide-react';
-import axios from 'axios';
 import { MessageCard } from '@/components/MessageCard';
 import FloatingParticles from '@/components/FloatingParticles';
 import { Toaster, toast } from 'sonner';
 import { Message } from '@/model/User.model';
+import { Separator } from "@/components/ui/separator";
 
 export default function UserDashboard() {
     const router = useRouter();
-    const { data: session, status } = useSession();
+    const { data: session, status, update } = useSession();
 
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSwitchLoading, setIsSwitchLoading] = useState(false);
     const [accepting, setAccepting] = useState<boolean | null>(null);
+    const [username, setUsername] = useState(session?.user?.username || '');
+
+    useEffect(() => {
+        if (session?.user) setUsername(session.user.username ?? '');
+        else setUsername('');
+    }, [session?.user]);
+
+    const handleUsernameUpdate = async (newUsername: string) => {
+        if (!session) return;
+        await update({ ...session, user: { ...session.user, username: newUsername } });
+        setUsername(newUsername);
+    };
 
     const fetchMessages = useCallback(async (refresh = false) => {
         setIsLoading(true);
@@ -60,7 +71,9 @@ export default function UserDashboard() {
         if (accepting === null) return;
         setIsSwitchLoading(true);
         try {
-            const res = await axios.post<{ accepting: boolean }>('/api/accept-messages', { accepting: !accepting });
+            const res = await axios.post<{ accepting: boolean }>('/api/accept-messages', {
+                acceptMessages: !accepting
+            });
             setAccepting(res.data.accepting);
             toast.success(`Now ${res.data.accepting ? 'accepting' : 'not accepting'} new messages`);
         } catch {
@@ -74,22 +87,12 @@ export default function UserDashboard() {
         setMessages(prev => prev.filter(msg => msg._id !== messageId));
     };
 
-    const handleGetSuggestions = async (messageId: string) => {
-        try {
-            const res = await axios.post<{ suggestions?: string[] }>('/api/suggest-messages', { messageId });
-            return res.data.suggestions || [];
-        } catch {
-            toast.error('Failed to get suggestions');
-            return [];
-        }
-    };
-
     useEffect(() => {
         if (status !== 'authenticated' || !session?.user) return;
         if (!session.user.isVerified) router.push(`/verify/${session.user.username}`);
         fetchMessages();
         fetchAcceptingStatus();
-    }, [session, status]);
+    }, [session, status, router, fetchMessages, fetchAcceptingStatus]);
 
     if (status === 'loading') return <Loader2 className="w-8 h-8 animate-spin text-white" />;
 
@@ -100,7 +103,7 @@ export default function UserDashboard() {
         </div>
     );
 
-    const profileUrl = `${window.location.protocol}//${window.location.host}/u/${session.user.username}`;
+    const profileUrl = `${window.location.protocol}//${window.location.host}/u/${username}`;
     const totalMessages = messages.length;
     const unreadMessages = messages.filter(msg => !msg.isRead).length;
 
@@ -108,8 +111,8 @@ export default function UserDashboard() {
         <>
             <div className="relative min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-gray-900 to-black overflow-hidden">
                 <FloatingParticles count={20} />
-
                 <div className="relative z-10 max-w-6xl mx-auto bg-gray-800/50 backdrop-blur-md rounded-2xl border border-gray-700 p-8">
+
                     {/* Header */}
                     <div className="text-center mb-8">
                         <div className="flex justify-center mb-4">
@@ -121,12 +124,21 @@ export default function UserDashboard() {
                         <p className="text-gray-400">Manage your anonymous messages</p>
                     </div>
 
-                    {/* Profile URL Section */}
+                    {/* Profile URL */}
                     <div className="mb-8 p-6 bg-gray-700/30 backdrop-blur-sm rounded-xl border border-gray-600 flex flex-col sm:flex-row gap-3 items-center">
-                        <input type="text" value={profileUrl} disabled className="flex-1 bg-gray-600/50 border border-gray-500 text-white rounded-lg px-4 py-2" />
+                        <input
+                            type="text"
+                            value={profileUrl}
+                            disabled
+                            className="flex-1 bg-gray-600/50 border border-gray-500 text-white rounded-lg px-4 py-2"
+                        />
                         <Button onClick={() => { navigator.clipboard.writeText(profileUrl); toast.success('Profile URL copied'); }}>
                             <Copy className="w-4 h-4 mr-2" /> Copy
                         </Button>
+                    </div>
+
+                    <div className="w-full py-8 md:py-12">
+                        <Separator className="h-0.5 w-3/4 mx-auto bg-gradient-to-r from-transparent via-purple-500/60 to-transparent" />
                     </div>
 
                     {/* Stats + Accepting */}
@@ -156,8 +168,6 @@ export default function UserDashboard() {
                         </div>
                     </div>
 
-                    <Separator className="bg-gray-600 my-8" />
-
                     {/* Messages */}
                     <div>
                         <div className="flex items-center justify-between mb-4">
@@ -171,11 +181,7 @@ export default function UserDashboard() {
                         {messages.length ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {messages.map(msg => (
-                                    <MessageCard
-                                        key={msg._id}
-                                        message={msg}
-                                        onMessageDelete={handleDeleteMessage}
-                                    />
+                                    <MessageCard key={msg._id} message={msg} onMessageDelete={handleDeleteMessage} />
                                 ))}
                             </div>
                         ) : (

@@ -1,8 +1,8 @@
-// app/api/accept-messages/route.ts
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/options";
 import { dbConnect } from "@/lib/dbConnect";
 import { UserModel } from "@/model/User.model";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   await dbConnect();
@@ -10,16 +10,16 @@ export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
-    return Response.json(
+    return NextResponse.json(
       { success: false, message: "Not authenticated" },
       { status: 401 }
     );
   }
 
-  const userId = session.user._id;
-  const { acceptMessages } = await request.json();
-
   try {
+    const { acceptMessages } = await request.json();
+    const userId = session.user._id;
+
     const updatedUser = await UserModel.findByIdAndUpdate(
       userId,
       { isAcceptingMessages: acceptMessages },
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     );
 
     if (!updatedUser) {
-      return Response.json(
+      return NextResponse.json(
         {
           success: false,
           message: "Unable to find user to update message acceptance status",
@@ -36,17 +36,17 @@ export async function POST(request: Request) {
       );
     }
 
-    return Response.json(
+    return NextResponse.json(
       {
         success: true,
         message: "Message acceptance status updated successfully",
-        updatedUser,
+        accepting: updatedUser.isAcceptingMessages,
       },
       { status: 200 }
     );
   } catch (error) {
     console.error("Error updating message acceptance status:", error);
-    return Response.json(
+    return NextResponse.json(
       { success: false, message: "Error updating message acceptance status" },
       { status: 500 }
     );
@@ -59,7 +59,7 @@ export async function GET() {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
-    return Response.json(
+    return NextResponse.json(
       { success: false, message: "Not authenticated" },
       { status: 401 }
     );
@@ -69,22 +69,22 @@ export async function GET() {
     const foundUser = await UserModel.findById(session.user._id);
 
     if (!foundUser) {
-      return Response.json(
+      return NextResponse.json(
         { success: false, message: "User not found" },
         { status: 404 }
       );
     }
 
-    return Response.json(
+    return NextResponse.json(
       {
         success: true,
-        isAcceptingMessages: foundUser.isAcceptingMessages,
+        accepting: foundUser.isAcceptingMessages,
       },
       { status: 200 }
     );
   } catch (error) {
     console.error("Error retrieving message acceptance status:", error);
-    return Response.json(
+    return NextResponse.json(
       { success: false, message: "Error retrieving message acceptance status" },
       { status: 500 }
     );
