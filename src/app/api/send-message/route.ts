@@ -1,3 +1,4 @@
+// src/app/api/send-message/route.ts
 import { NextResponse } from 'next/server';
 import { UserModel, MessageDocument } from '@/model/User.model';
 import { dbConnect } from '@/lib/dbConnect';
@@ -15,7 +16,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await UserModel.findOne({ username }).exec();
+    // Convert username to lowercase for case-insensitive search
+    const normalizedUsername = username.toLowerCase();
+    
+    const user = await UserModel.findOne({ 
+      username: { $regex: new RegExp(`^${normalizedUsername}$`, 'i') }
+    }).exec();
+
+    // Alternative approach if the above doesn't work:
+    // const user = await UserModel.findOne({ 
+    //   username: normalizedUsername 
+    // }).exec();
 
     if (!user) {
       return NextResponse.json(

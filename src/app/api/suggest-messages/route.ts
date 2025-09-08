@@ -1,7 +1,7 @@
 // src/app/api/suggest-messages/route.ts
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { generateWithGemini } from "@/lib/gemini"; // Import the Gemini function
+import { generateWithGemini } from "@/lib/gemini";
 
 export const runtime = "edge";
 
@@ -23,28 +23,35 @@ export async function POST(req: Request) {
 
     // Add variation to prevent deterministic outputs
     const randomVariations = [
-      "Generate 3 diverse, engaging responses to this message:",
-      "Create 3 unique, friendly replies for:",
-      "Suggest 3 different ways to respond to:",
-      "Craft 3 distinct, polite answers for this message:"
+      "Generate 3 ways to complete this partial message:",
+      "Suggest 3 continuations for this message:",
+      "Create 3 different ways to finish this thought:",
+      "Provide 3 options to complete this message:"
     ];
     
     const randomPrompt = randomVariations[Math.floor(Math.random() * randomVariations.length)];
-    const randomSeed = Math.floor(Math.random() * 10000);
 
     const prompt = `
 ${randomPrompt} "${message}"
 
 IMPORTANT:
-- Make each suggestion completely different in tone and content
-- Avoid generic phrases like "That's interesting" or "Thanks for sharing"
-- Be specific to the message content when possible
-- Keep responses between 1-2 sentences
-- Format exactly as: suggestion1||suggestion2||suggestion3
-- Random variation: ${randomSeed}
+- These are COMPLETIONS, not responses to the message
+- Continue the thought naturally from where it left off
+- Make each completion completely different in tone and content
+- Keep completions between 1-2 sentences
+- Format exactly as: completion1||completion2||completion3
+- Be creative and engaging
+- Avoid generic phrases
+
+Examples:
+If input is: "I was thinking about"
+Good completions: "taking a trip this weekend||starting a new hobby||catching up with old friends"
+
+If input is: "The weather today is"
+Good completions: "perfect for a picnic in the park||making me want to stay indoors with a book||reminding me of my childhood summers"
 `;
 
-    // Use the Gemini function directly (no .generateContent needed)
+    // Use the Gemini function directly
     const generatedText = await generateWithGemini(prompt);
     
     if (!generatedText) {
@@ -58,11 +65,13 @@ IMPORTANT:
         .replace(/^["']|["']$/g, '')
         .replace(/^\d+[\.\)]\s*/, '')
         .replace(/^-\s*/, '')
+        .replace(/completion\s*\d+\s*:/i, '')
         .replace(/suggestion\s*\d+\s*:/i, '')
         .trim()
       )
       .filter((s: string) => s.length > 5 && 
                   !s.toLowerCase().includes('format') &&
+                  !s.toLowerCase().includes('completion') &&
                   !s.toLowerCase().includes('suggestion') &&
                   !s.toLowerCase().includes('response') &&
                   !s.toLowerCase().includes('here are')
@@ -71,15 +80,14 @@ IMPORTANT:
 
     // If we don't get 3 good suggestions, generate contextual fallbacks
     if (suggestions.length < 3) {
-      const messageKeywords = message.split(/\s+/).slice(0, 3).join(' ');
-      
+      // Create completions that continue the message
       const fallbacks = [
-        `I've been thinking about ${messageKeywords} too. What's your perspective?`,
-        `That point about ${messageKeywords} really resonates. Could you elaborate?`,
-        `Your message about ${messageKeywords} made me curious to learn more.`,
-        `I appreciate your thoughts on ${messageKeywords}. What else should I know?`,
-        `${messageKeywords} is something I've been considering lately. Tell me more!`,
-        `Your perspective on ${messageKeywords} is unique. I'd love to hear more.`
+        `and I'd love to hear your thoughts on it.`,
+        `so I wanted to share it with you.`,
+        `which made me think of you.`,
+        `and it's been on my mind all day.`,
+        `but I'm not sure how to finish that thought.`,
+        `and I'm curious what you think about it.`
       ];
       
       // Shuffle and take unique fallbacks
@@ -90,7 +98,7 @@ IMPORTANT:
     // Ensure uniqueness
     const uniqueSuggestions = Array.from(new Set(suggestions));
     while (uniqueSuggestions.length < 3) {
-      uniqueSuggestions.push(`I'd love to continue our conversation about "${message.substring(0, 30)}..."`);
+      uniqueSuggestions.push(`and I've been thinking about it ever since.`);
     }
 
     return new Response(uniqueSuggestions.join('||'), {
@@ -109,17 +117,17 @@ IMPORTANT:
       const body = await req.json();
       const parsed = RequestSchema.safeParse(body);
       if (parsed.success) {
-        originalMessage = parsed.data.message.split(/\s+/).slice(0, 2).join(' ');
+        originalMessage = parsed.data.message;
       }
     } catch (e) {
       // If we can't parse the request, use a generic fallback
     }
     
-    // Contextual fallback based on message content
+    // Fallback completions (not responses)
     const fallbacks = [
-      `I find ${originalMessage} really fascinating. Could you tell me more?`,
-      `Your perspective on ${originalMessage} is interesting. What inspired that?`,
-      `Thanks for sharing about ${originalMessage}. I'd love to hear more details.`
+      `and it's been on my mind lately.`,
+      `so I wanted to share it with you.`,
+      `and I'd love to know what you think.`
     ];
     
     const fallback = fallbacks.join('||');
