@@ -1,3 +1,4 @@
+// src/app/api/accept-messages/route.ts
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/options";
 import { dbConnect } from "@/lib/dbConnect";
@@ -20,9 +21,10 @@ export async function POST(request: Request) {
     const { acceptMessages } = await request.json();
     const userId = session.user._id;
 
+    // Make sure the field name matches your User model
     const updatedUser = await UserModel.findByIdAndUpdate(
       userId,
-      { isAcceptingMessages: acceptMessages },
+      { isAcceptingMessages: acceptMessages }, // This should match your model field
       { new: true }
     );
 
@@ -40,7 +42,7 @@ export async function POST(request: Request) {
       {
         success: true,
         message: "Message acceptance status updated successfully",
-        accepting: updatedUser.isAcceptingMessages,
+        accepting: updatedUser.isAcceptingMessages, // Return the actual field name
       },
       { status: 200 }
     );
@@ -78,7 +80,7 @@ export async function GET() {
     return NextResponse.json(
       {
         success: true,
-        accepting: foundUser.isAcceptingMessages,
+        accepting: foundUser.isAcceptingMessages, // Return the actual field name
       },
       { status: 200 }
     );

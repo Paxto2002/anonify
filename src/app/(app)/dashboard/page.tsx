@@ -1,8 +1,9 @@
+// src/app/dashboard/page.tsx
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, RefreshCcw, Copy, User, MessageCircle, Shield } from 'lucide-react';
@@ -11,6 +12,19 @@ import FloatingParticles from '@/components/FloatingParticles';
 import { Toaster, toast } from 'sonner';
 import { Message } from '@/model/User.model';
 import { Separator } from "@/components/ui/separator";
+
+// Define the API response types
+interface AcceptMessagesResponse {
+  success: boolean;
+  accepting: boolean;
+  message?: string;
+}
+
+interface GetMessagesResponse {
+  success: boolean;
+  messages?: Message[];
+  message?: string;
+}
 
 export default function UserDashboard() {
     const router = useRouter();
@@ -27,16 +41,10 @@ export default function UserDashboard() {
         else setUsername('');
     }, [session?.user]);
 
-    const handleUsernameUpdate = async (newUsername: string) => {
-        if (!session) return;
-        await update({ ...session, user: { ...session.user, username: newUsername } });
-        setUsername(newUsername);
-    };
-
     const fetchMessages = useCallback(async (refresh = false) => {
         setIsLoading(true);
         try {
-            const { data } = await axios.get<{ success: boolean; messages?: Message[]; message?: string }>('/api/get-messages');
+            const { data } = await axios.get<GetMessagesResponse>('/api/get-messages');
             if (!data.success) return toast.error(data.message || 'Failed to fetch messages');
 
             const allMessages = (data.messages || []).map(msg => ({
@@ -58,10 +66,17 @@ export default function UserDashboard() {
     const fetchAcceptingStatus = useCallback(async () => {
         setIsSwitchLoading(true);
         try {
-            const res = await axios.get<{ accepting: boolean }>('/api/accept-messages');
-            setAccepting(res.data.accepting ?? true);
-        } catch {
-            setAccepting(true);
+            const response = await axios.get<AcceptMessagesResponse>('/api/accept-messages');
+            if (response.data.success) {
+                setAccepting(response.data.accepting);
+            } else {
+                toast.error('Failed to fetch acceptance status');
+                setAccepting(true); // Default to true if there's an error
+            }
+        } catch (error) {
+            console.error('Error fetching acceptance status:', error);
+            toast.error('Failed to fetch acceptance status');
+            setAccepting(true); // Default to true if there's an error
         } finally {
             setIsSwitchLoading(false);
         }
@@ -71,13 +86,26 @@ export default function UserDashboard() {
         if (accepting === null) return;
         setIsSwitchLoading(true);
         try {
-            const res = await axios.post<{ accepting: boolean }>('/api/accept-messages', {
+            const response = await axios.post<AcceptMessagesResponse>('/api/accept-messages', {
                 acceptMessages: !accepting
             });
-            setAccepting(res.data.accepting);
-            toast.success(`Now ${res.data.accepting ? 'accepting' : 'not accepting'} new messages`);
-        } catch {
-            toast.error('Failed to update settings');
+
+            if (response.data.success) {
+                setAccepting(response.data.accepting);
+                toast.success(response.data.message || `Now ${response.data.accepting ? 'accepting' : 'not accepting'} new messages`);
+            } else {
+                toast.error(response.data.message || 'Failed to update settings');
+            }
+        } catch (error) {
+            console.error('Error toggling acceptance:', error);
+            
+            // Proper error handling without using 'any'
+            if (axios.isAxiosError(error)) {
+                const axiosError = error as AxiosError<{ message?: string }>;
+                toast.error(axiosError.response?.data?.message || 'Failed to update settings');
+            } else {
+                toast.error('Failed to update settings');
+            }
         } finally {
             setIsSwitchLoading(false);
         }
@@ -94,14 +122,22 @@ export default function UserDashboard() {
         fetchAcceptingStatus();
     }, [session, status, router, fetchMessages, fetchAcceptingStatus]);
 
-    if (status === 'loading') return <Loader2 className="w-8 h-8 animate-spin text-white" />;
+    if (status === 'loading') {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-white" />
+            </div>
+        );
+    }
 
-    if (!session?.user) return (
-        <div className="min-h-screen flex flex-col items-center justify-center text-white">
-            <p>You are not signed in.</p>
-            <Button onClick={() => signIn()}>Sign In</Button>
-        </div>
-    );
+    if (!session?.user) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center text-white">
+                <p>You are not signed in.</p>
+                <Button onClick={() => signIn()}>Sign In</Button>
+            </div>
+        );
+    }
 
     const profileUrl = `${window.location.protocol}//${window.location.host}/u/${username}`;
     const totalMessages = messages.length;
@@ -146,8 +182,15 @@ export default function UserDashboard() {
                         <div className="flex items-center gap-3">
                             <Shield className="w-6 h-6 text-blue-400" />
                             <span className="text-gray-300">Accept Messages:</span>
-                            {accepting !== null && <Switch checked={accepting} onCheckedChange={handleToggleAccepting} disabled={isSwitchLoading} />}
-                            {isSwitchLoading && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+                            {accepting !== null ? (
+                                <Switch 
+                                    checked={accepting} 
+                                    onCheckedChange={handleToggleAccepting} 
+                                    disabled={isSwitchLoading} 
+                                />
+                            ) : (
+                                <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                            )}
                         </div>
 
                         <div className="flex gap-4 mt-4 md:mt-0">

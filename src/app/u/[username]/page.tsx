@@ -1,7 +1,7 @@
 // src/app/u/[username]/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Toaster, toast } from 'sonner';
 import FloatingParticles from '@/components/FloatingParticles';
 import MessageSuggester from '@/components/MessageSuggester';
-import { Sparkles, Send, MessageCircle, User } from 'lucide-react';
+import { Sparkles, Send, MessageCircle, User, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
 // Zod schema for anonymous message
@@ -25,21 +25,75 @@ interface SendMessageResponse {
     message: string;
 }
 
+// Define the response type for the user validation API
+interface UserValidationResponse {
+    exists: boolean;
+    acceptsMessages: boolean;
+    username?: string;
+    error?: string;
+}
+
 export default function PublicMessagePage() {
     const params = useParams<{ username: string }>();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isValidUser, setIsValidUser] = useState<boolean>(false);
+    const [userAcceptsMessages, setUserAcceptsMessages] = useState<boolean>(false);
+    const [displayUsername, setDisplayUsername] = useState<string>('');
 
     const form = useForm<z.infer<typeof AnonymousMessageSchema>>({
         resolver: zodResolver(AnonymousMessageSchema),
         defaultValues: { content: '' },
     });
 
+    // Check if user exists and accepts messages
+    useEffect(() => {
+        const validateUser = async () => {
+            setIsLoading(true);
+            try {
+                const username = Array.isArray(params.username) 
+                    ? params.username[0] 
+                    : params.username;
+                
+                setDisplayUsername(username);
+
+                const response = await axios.get<UserValidationResponse>(
+                    `/api/validate-user?username=${encodeURIComponent(username)}`
+                );
+
+                if (response.data.exists) {
+                    setIsValidUser(true);
+                    setUserAcceptsMessages(response.data.acceptsMessages);
+                    
+                    if (!response.data.acceptsMessages) {
+                        toast.error('This user is not currently accepting messages');
+                    }
+                } else {
+                    setIsValidUser(false);
+                    toast.error('User not found');
+                }
+            } catch (error) {
+                console.error('Error validating user:', error);
+                setIsValidUser(false);
+                toast.error('Error checking user status');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (params.username) {
+            validateUser();
+        }
+    }, [params.username]);
+
     // Submit message
     const onSubmit = async (data: z.infer<typeof AnonymousMessageSchema>) => {
+        if (!userAcceptsMessages) return;
+        
         setIsSubmitting(true);
         try {
             const response = await axios.post<SendMessageResponse>('/api/send-message', {
-                username: params.username,
+                username: displayUsername,
                 content: data.content,
             });
             toast.success(response.data.message || 'Message sent successfully!');
@@ -50,6 +104,8 @@ export default function PublicMessagePage() {
 
             if (errorMessage === 'User is not accepting messages at the moment') {
                 toast.error('This user is not currently accepting messages');
+            } else if (errorMessage?.toLowerCase().includes('not found')) {
+                toast.error('User not found');
             } else {
                 toast.error(errorMessage ?? 'Failed to send message');
             }
@@ -59,6 +115,48 @@ export default function PublicMessagePage() {
     };
 
     const applySuggestion = (text: string) => form.setValue('content', text);
+
+    // Show loading state
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
+                <div className="flex flex-col items-center text-white">
+                    <Loader2 className="w-8 h-8 animate-spin mb-4" />
+                    <p>Checking user...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show error state if user doesn't exist
+    if (!isValidUser) {
+        return (
+            <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center px-4">
+                <div className="text-center text-white max-w-md">
+                    <User className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                    <h1 className="text-2xl font-bold mb-2">User Not Found</h1>
+                    <p className="text-gray-300">
+                        The user @{displayUsername} does not exist or cannot be found.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show message if user exists but doesn't accept messages
+    if (!userAcceptsMessages) {
+        return (
+            <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center px-4">
+                <div className="text-center text-white max-w-md">
+                    <User className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                    <h1 className="text-2xl font-bold mb-2">Not Accepting Messages</h1>
+                    <p className="text-gray-300">
+                        @{displayUsername} is not currently accepting messages.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="mt-22 relative min-h-screen bg-gradient-to-b from-gray-900 to-black overflow-hidden">
@@ -85,13 +183,13 @@ export default function PublicMessagePage() {
                             </div>
                         </div>
 
-                        <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                        <h1 className="text-4xl md-text-5xl font-bold text-white mb-4">
                             Send Anonymous Message
                         </h1>
 
                         <div className="flex items-center justify-center gap-2 text-lg text-gray-300 mb-2">
                             <User className="w-5 h-5 text-purple-400" />
-                            <span>To @{params.username}</span>
+                            <span>To @{displayUsername}</span>
                         </div>
 
                         <p className="text-gray-400 max-w-md mx-auto">
