@@ -1,28 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { Mail, Send, User, MessageCircle, Phone, Linkedin, Github, MessageSquare } from 'lucide-react';
+import { Mail, Send, Phone, Linkedin, Github, MessageSquare } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import FloatingParticles from '@/components/FloatingParticles';
 
 export default function ContactSupportPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Form submitted:', formData);
-  };
 
   return (
     <main className="mt-18 relative w-full bg-gradient-to-b from-gray-900 to-black py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
@@ -46,7 +31,7 @@ export default function ContactSupportPage() {
       </section>
 
       <section className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10 mb-16">
-         
+
         {/* Contact Info */}
         <div className="bg-gradient-to-br from-purple-900/30 to-violet-900/20 rounded-2xl p-8 border border-purple-700/30">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center">

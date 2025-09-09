@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, User, Settings, LogOut, Home, Menu, X } from 'lucide-react';
+import { User, Settings, LogOut, Home, Menu, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';

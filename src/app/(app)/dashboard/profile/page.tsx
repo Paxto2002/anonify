@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +14,6 @@ import { ApiResponse } from '@/types/ApiResponse';
 
 export default function ProfilePage() {
     const { data: session } = useSession();
-    const router = useRouter();
 
     const [isLoading, setIsLoading] = useState(false);
     const [showSignOutModal, setShowSignOutModal] = useState(false);

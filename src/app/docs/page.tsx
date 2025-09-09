@@ -3,13 +3,11 @@
 import { useState } from "react";
 import {
   Sparkles,
-  ArrowRight,
   Code,
   BookOpen,
   MessageCircle,
   Zap,
   Shield,
-  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
@@ -66,11 +64,10 @@ export default function DocumentationPage() {
                 <button
                   key={section}
                   onClick={() => setActiveSection(section)}
-                  className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
-                    activeSection === section
-                      ? "bg-purple-600 text-white"
-                      : "text-gray-300 hover:bg-gray-700/50"
-                  }`}
+                  className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${activeSection === section
+                    ? "bg-purple-600 text-white"
+                    : "text-gray-300 hover:bg-gray-700/50"
+                    }`}
                 >
                   {section
                     .split("-")

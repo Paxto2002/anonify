@@ -28,7 +28,7 @@ interface GetMessagesResponse {
 
 export default function UserDashboard() {
     const router = useRouter();
-    const { data: session, status, update } = useSession();
+    const { data: session, status } = useSession();
 
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);

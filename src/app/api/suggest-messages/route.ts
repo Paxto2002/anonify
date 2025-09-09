@@ -1,5 +1,4 @@
 // src/app/api/suggest-messages/route.ts
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { generateWithGemini } from "@/lib/gemini";
 
@@ -118,9 +117,11 @@ Good completions: "perfect for a picnic in the park||making me want to stay indo
       const parsed = RequestSchema.safeParse(body);
       if (parsed.success) {
         originalMessage = parsed.data.message;
+        originalMessage.slice(0, 100);
       }
     } catch (e) {
       // If we can't parse the request, use a generic fallback
+      console.error("Failed to parse request body:", e);
     }
     
     // Fallback completions (not responses)

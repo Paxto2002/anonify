@@ -9,7 +9,7 @@ import { useSession, signOut } from "next-auth/react";
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const { data: session, status } = useSession();
+    const { data: session } = useSession();
     const toggleMenu = () => setIsOpen(!isOpen);
 
     useEffect(() => {
@@ -67,7 +67,7 @@ export default function Navbar() {
                             </div>
                         </div>
                     </Link>
-                    
+
                     {/* Desktop Links */}
                     <div className="hidden md:flex items-center space-x-1 font-medium">
                         {navLinks.map((link) => (
@@ -84,7 +84,7 @@ export default function Navbar() {
                                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-[#4e5efe] to-[#8a2be2] transition-all duration-300 group-hover/navlink:w-full"></span>
                             </Link>
                         ))}
-                        
+
                         {/* Sign Out button for authenticated users */}
                         {session && (
                             <button
@@ -132,7 +132,7 @@ export default function Navbar() {
                                     <span className="absolute bottom-2 left-4 right-4 h-0.5 bg-gradient-to-r from-[#4e5efe] to-[#8a2be2] scale-x-0 transition-transform duration-300 group-hover/mobilelink:scale-x-100 origin-left"></span>
                                 </Link>
                             ))}
-                            
+
                             {/* Sign Out button for authenticated users in mobile */}
                             {session && (
                                 <button

@@ -1,16 +1,20 @@
-// src/app/api/delete-message/[messageid]/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { dbConnect } from "@/lib/dbConnect";
 import { UserModel } from "@/model/User.model";
 import { getServerSession } from "next-auth/next";
-import { dbConnect } from "@/lib/dbConnect";
-import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "../../auth/[...nextauth]/options";
+
+interface RouteContext {
+  params: Promise<{ messageid: string }>;
+}
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { messageid: string } } // ✅ use context directly
+  context: RouteContext
 ) {
-  const { messageid } = context.params;
+  const { messageid } = await context.params;
 
+  // Rest of your code remains the same...
   await dbConnect();
 
   const session = await getServerSession(authOptions);
