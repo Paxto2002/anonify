@@ -1,14 +1,16 @@
+// src/components/Navbar.tsx
 "use client";
 import { useState, useEffect } from "react";
-import { X, Menu, MessageCircle, Sparkles, User, LogIn } from "lucide-react";
+import { X, Menu, MessageCircle, Sparkles, User, LogIn, LogOut, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSession, signOut } from "next-auth/react";
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const { data: session, status } = useSession();
     const toggleMenu = () => setIsOpen(!isOpen);
-
 
     useEffect(() => {
         const handleScroll = () => {
@@ -18,13 +20,29 @@ export default function Navbar() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    const navLinks = [
+    const handleSignOut = async () => {
+        await signOut({ callbackUrl: '/' });
+    };
+
+    // Navigation links for unauthenticated users
+    const unauthenticatedLinks = [
         { name: "Home", href: "/", icon: <Sparkles size={18} className="mr-1" /> },
         { name: "About Us", href: "/about", icon: <MessageCircle size={18} className="mr-1" /> },
         { name: "Pricing", href: "/pricing", icon: <User size={18} className="mr-1" /> },
         { name: "Sign In", href: "/sign-in", icon: <LogIn size={18} className="mr-1" /> },
         { name: "Sign Up", href: "/sign-up", icon: <LogIn size={18} className="mr-1" /> },
     ];
+
+    // Navigation links for authenticated users
+    const authenticatedLinks = [
+        { name: "Home", href: "/", icon: <Sparkles size={18} className="mr-1" /> },
+        { name: "About Us", href: "/about", icon: <MessageCircle size={18} className="mr-1" /> },
+        { name: "Pricing", href: "/pricing", icon: <User size={18} className="mr-1" /> },
+        { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={18} className="mr-1" /> },
+    ];
+
+    // Use appropriate links based on authentication status
+    const navLinks = session ? authenticatedLinks : unauthenticatedLinks;
 
     return (
         <nav className={`fixed w-full z-50 transition-all duration-500 ${scrolled ? "bg-gray-900/95 backdrop-blur-md py-2 shadow-xl" : "bg-gray-900 py-3"} border-b ${scrolled ? "border-gray-700" : "border-transparent"}`}>
@@ -49,6 +67,7 @@ export default function Navbar() {
                             </div>
                         </div>
                     </Link>
+                    
                     {/* Desktop Links */}
                     <div className="hidden md:flex items-center space-x-1 font-medium">
                         {navLinks.map((link) => (
@@ -65,6 +84,21 @@ export default function Navbar() {
                                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-[#4e5efe] to-[#8a2be2] transition-all duration-300 group-hover/navlink:w-full"></span>
                             </Link>
                         ))}
+                        
+                        {/* Sign Out button for authenticated users */}
+                        {session && (
+                            <button
+                                onClick={handleSignOut}
+                                className="relative flex items-center px-4 py-2 rounded-lg transition-all duration-300 text-gray-300 hover:text-white group/navlink cursor-pointer"
+                            >
+                                <LogOut size={18} className="mr-1" />
+                                <span className="bg-gradient-to-r from-[#4e5efe] to-[#8a2be2] bg-clip-text text-transparent group-hover/navlink:from-[#8a2be2] group-hover/navlink:to-[#4e5efe] transition-all duration-300">
+                                    Sign Out
+                                </span>
+                                {/* Animated underline */}
+                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-[#4e5efe] to-[#8a2be2] transition-all duration-300 group-hover/navlink:w-full"></span>
+                            </button>
+                        )}
                     </div>
 
                     {/* Mobile Menu Button */}
@@ -98,6 +132,24 @@ export default function Navbar() {
                                     <span className="absolute bottom-2 left-4 right-4 h-0.5 bg-gradient-to-r from-[#4e5efe] to-[#8a2be2] scale-x-0 transition-transform duration-300 group-hover/mobilelink:scale-x-100 origin-left"></span>
                                 </Link>
                             ))}
+                            
+                            {/* Sign Out button for authenticated users in mobile */}
+                            {session && (
+                                <button
+                                    onClick={() => {
+                                        handleSignOut();
+                                        setIsOpen(false);
+                                    }}
+                                    className="relative flex items-center px-4 py-3 rounded-lg transition-all duration-300 text-gray-300 hover:text-white hover:bg-gray-700/50 group/mobilelink cursor-pointer w-full text-left"
+                                >
+                                    <LogOut size={18} className="mr-1" />
+                                    <span className="bg-gradient-to-r from-[#4e5efe] to-[#8a2be2] bg-clip-text text-transparent group-hover/mobilelink:from-[#8a2be2] group-hover/mobilelink:to-[#4e5efe]">
+                                        Sign Out
+                                    </span>
+                                    {/* Mobile underline effect */}
+                                    <span className="absolute bottom-2 left-4 right-4 h-0.5 bg-gradient-to-r from-[#4e5efe] to-[#8a2be2] scale-x-0 transition-transform duration-300 group-hover/mobilelink:scale-x-100 origin-left"></span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}

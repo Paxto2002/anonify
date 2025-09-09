@@ -9,12 +9,11 @@ export async function middleware(request: NextRequest) {
   const url = request.nextUrl;
 
   // Redirect to dashboard if the user is already authenticated
-  // and trying to access sign-in, sign-up, or home page
+  // and trying to access sign-in or sign-up pages ONLY
   if (
     token &&
     (url.pathname.startsWith('/sign-in') ||
-      url.pathname.startsWith('/sign-up') ||
-      url.pathname === '/')
+      url.pathname.startsWith('/sign-up'))
   ) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
@@ -34,6 +33,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/sign-in', request.url));
   }
 
+  // ALLOW authenticated users to access home, pricing, about, and other public pages
   return NextResponse.next();
 }
 
@@ -50,5 +50,6 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/sign-in', '/sign-up', '/', '/verify/:path*'],
+  matcher: ['/dashboard/:path*', '/sign-in', '/sign-up', '/verify/:path*'],
+  // Removed '/' from matcher to allow access to home page
 };
