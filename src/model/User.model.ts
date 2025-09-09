@@ -1,3 +1,4 @@
+// src/model/User.model.ts
 import mongoose, { Schema, Document, model, models } from "mongoose";
 
 // ================== Message Interface & Schema ==================

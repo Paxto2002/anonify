@@ -44,7 +44,7 @@ export async function GET(request: Request) {
       return Response.json(
         {
           success: false,
-          message: 'Username is already taken',
+          message: 'Username is available',
         },
         { status: 200 }
       );
