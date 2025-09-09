@@ -98,3 +98,15 @@ export async function POST(request: Request) {
     );
   }
 }
+
+// Add this GET method handler to prevent 405 errors
+export async function GET() {
+  return NextResponse.json(
+    { 
+      message: "Sign-up API endpoint",
+      instructions: "Use POST method with { username, email, password } to register a new user",
+      status: "active"
+    },
+    { status: 200 }
+  );
+}
